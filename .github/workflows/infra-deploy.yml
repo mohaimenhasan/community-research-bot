@@ -23,7 +23,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-            - name: Deploy infrastructure (direct REST API, safe JSON injection)
+      - name: Deploy infrastructure (direct REST API, safe JSON injection)
         shell: bash
         run: |
           echo "Building Bicep into JSON template..."
@@ -58,6 +58,6 @@ jobs:
             --resource-group community-research \
             --name commhub-deploy \
             --query "properties.provisioningState"
-            
+
       - name: Verify resources
         run: az resource list -g community-research -o table
