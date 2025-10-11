@@ -1,29 +1,21 @@
-// minor changes to trigger infra workflow
-
 @description('Deployment location')
 param location string = resourceGroup().location
 
 @description('Base name prefix for all resources')
 param baseName string = 'commhub'
 
-@description('Storage account name (must be globally unique)')
-param storageName string = toLower('${baseName}store${uniqueString(resourceGroup().id)}')
-
-@description('Azure Function App name')
-param functionAppName string = '${baseName}-func'
-
-@description('App Service plan SKU')
+@description('App Service Plan SKU')
 param sku string = 'Y1' // Y1 = Consumption
 
 // ---------- Storage Account ----------
 resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: storageName
+  name: toLower('${baseName}store${uniqueString(resourceGroup().id)}')
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
 }
 
-// ---------- App Service Plan (for Function App) ----------
+// ---------- App Service Plan ----------
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: '${baseName}-plan'
   location: location
@@ -36,7 +28,7 @@ resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
 
 // ---------- Function App ----------
 resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
-  name: functionAppName
+  name: '${baseName}-func'
   location: location
   kind: 'functionapp'
   properties: {
@@ -44,17 +36,23 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     siteConfig: {
       appSettings: [
         { name: 'FUNCTIONS_WORKER_RUNTIME', value: 'python' }
-        { name: 'AzureWebJobsStorage', value: storage.properties.primaryEndpoints.blob }
+        { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
+        { name: 'AzureWebJobsStorage', value: storage.listKeys().keys[0].value }
         { name: 'WEBSITE_RUN_FROM_PACKAGE', value: '1' }
+        { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT', value: '1' }
       ]
     }
+    httpsOnly: true
   }
   identity: {
     type: 'SystemAssigned'
   }
-  dependsOn: [ storage, plan ]
+  dependsOn: [
+    storage
+    plan
+  ]
 }
 
 // ---------- Outputs ----------
 output functionAppName string = functionApp.name
-output storageAccount string = storage.name
+output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
