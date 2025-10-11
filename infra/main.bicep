@@ -4,9 +4,6 @@ param location string = resourceGroup().location
 @description('Base name prefix for all resources')
 param baseName string = 'commhub'
 
-@description('App Service Plan SKU')
-param sku string = 'Y1' // Y1 = Consumption
-
 // ---------- Storage Account ----------
 resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: toLower('${baseName}store${uniqueString(resourceGroup().id)}')
@@ -15,13 +12,15 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   kind: 'StorageV2'
 }
 
-// ---------- App Service Plan ----------
+// ---------- App Service Plan (Elastic Premium) ----------
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: '${baseName}-plan'
   location: location
   sku: {
-    name: sku
-    tier: sku == 'Y1' ? 'Dynamic' : 'ElasticPremium'
+    name: 'EP1'
+    tier: 'ElasticPremium'
+    size: 'EP1'
+    capacity: 1
   }
   kind: 'functionapp'
 }
