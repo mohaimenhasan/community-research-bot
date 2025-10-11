@@ -1,0 +1,32 @@
+name: Application Deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'functions/**'
+      - '.github/workflows/app-deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Function App code
+        uses: azure/functions-action@v1
+        with:
+          app-name: commhub-func
+          package: ./functions
+
+      - name: Verify deployment
+        run: |
+          az resource list -g community-research -o table
