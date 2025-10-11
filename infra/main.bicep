@@ -47,10 +47,6 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
   identity: {
     type: 'SystemAssigned'
   }
-  dependsOn: [
-    storage
-    plan
-  ]
 }
 
 // ---------- Outputs ----------

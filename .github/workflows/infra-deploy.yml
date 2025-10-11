@@ -15,32 +15,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 🩵 Upgrade Azure CLI inside the runner (fixes parser bug)
       - name: Upgrade Azure CLI
-        run: |
-          echo "Upgrading Azure CLI to latest stable version..."
-          az upgrade --yes || true
-          az version
+        run: az upgrade --yes || true
 
-      # 🔐 Login to Azure
       - name: Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 🧱 Deploy infrastructure using ARM Deploy (stable + maintained)
-      - name: Deploy Bicep infrastructure
-        uses: azure/arm-deploy@v2
-        with:
-          subscriptionId: 86772acf-2f10-4aa8-ac3c-1d79d4a24e64
-          resourceGroupName: community-research
-          template: ./infra/main.bicep
-          parameters: location=westus2
-          deploymentName: commhub-deploy
-          failOnStdErr: false
-
-      # ✅ Verify resources exist
-      - name: Verify deployment
+      - name: Deploy infrastructure (direct REST API)
+        shell: bash
         run: |
-          echo "Listing deployed resources..."
-          az resource list -g community-research -o table
+          echo "Building Bicep into JSON template..."
+          az bicep build --file infra/main.bicep --outfile infra/main.json
+
+          echo "Submitting deployment directly to ARM REST API..."
+          az rest \
+            --method put \
+            --uri "https://management.azure.com/subscriptions/86772acf-2f10-4aa8-ac3c-1d79d4a24e64/resourcegroups/community-research/providers/Microsoft.Resources/deployments/commhub-deploy?api-version=2022-09-01" \
+            --body @"infra/main.json" \
+            --headers "Content-Type=application/json"
+
+          echo "Deployment request submitted. Checking status..."
+          az deployment group show \
+            --resource-group community-research \
+            --name commhub-deploy \
+            --query "properties.provisioningState"
+
+      - name: Verify resources
+        run: az resource list -g community-research -o table
