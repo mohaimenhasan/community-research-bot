@@ -29,11 +29,28 @@ jobs:
           echo "Building Bicep into JSON template..."
           az bicep build --file infra/main.bicep --outfile infra/main.json
 
+          echo "Creating proper ARM deployment payload..."
+          cat > infra/deployment-body.json <<'EOF'
+          {
+            "properties": {
+              "mode": "Incremental",
+              "template": PLACEHOLDER_TEMPLATE,
+              "parameters": {
+                "location": { "value": "westus2" }
+              }
+            }
+          }
+          EOF
+
+          echo "Injecting Bicep JSON template into payload..."
+          TEMPLATE_CONTENT=$(cat infra/main.json | jq -c .)
+          jq --argjson template "$TEMPLATE_CONTENT" '.properties.template = $template' infra/deployment-body.json > infra/deployment-final.json
+
           echo "Submitting deployment directly to ARM REST API..."
           az rest \
             --method put \
             --uri "https://management.azure.com/subscriptions/86772acf-2f10-4aa8-ac3c-1d79d4a24e64/resourcegroups/community-research/providers/Microsoft.Resources/deployments/commhub-deploy?api-version=2022-09-01" \
-            --body @"infra/main.json" \
+            --body @"infra/deployment-final.json" \
             --headers "Content-Type=application/json"
 
           echo "Deployment request submitted. Checking status..."
