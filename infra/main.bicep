@@ -1,4 +1,4 @@
-// trigger infra workflow
+// minor changes to trigger infra workflow
 
 @description('Deployment location')
 param location string = resourceGroup().location

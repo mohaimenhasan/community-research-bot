@@ -22,7 +22,12 @@ jobs:
 
       - name: Deploy infrastructure (Bicep)
         run: |
-          az deployment group create \
+            az deployment group create \
+            --name commhub-deploy \
             --resource-group community-research \
             --template-file infra/main.bicep \
-            --parameters location=westus2
+            --parameters location=westus2 \
+            --only-show-errors \
+            --no-prompt \
+            --output none
+
