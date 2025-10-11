@@ -1,5 +1,5 @@
 @description('Deployment location')
-param location string = resourceGroup().location
+param location string = 'eastus'   // 🟢 Fixed region: East US
 
 @description('Base name prefix for all resources')
 param baseName string = 'commhub'
@@ -12,17 +12,17 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   kind: 'StorageV2'
 }
 
-// ---------- App Service Plan (Elastic Premium) ----------
+// ---------- App Service Plan (Basic B1) ----------
 resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
   name: '${baseName}-plan'
   location: location
   sku: {
-    name: 'EP1'
-    tier: 'ElasticPremium'
-    size: 'EP1'
+    name: 'B1'
+    tier: 'Basic'
+    size: 'B1'
     capacity: 1
   }
-  kind: 'functionapp'
+  kind: 'app'
 }
 
 // ---------- Function App ----------
