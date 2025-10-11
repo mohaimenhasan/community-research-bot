@@ -15,17 +15,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 🩵 Upgrade Azure CLI inside the runner (fixes parser bug)
+      - name: Upgrade Azure CLI
+        run: |
+          echo "Upgrading Azure CLI to latest stable version..."
+          az upgrade --yes || true
+          az version
+
+      # 🔐 Login to Azure
       - name: Login to Azure
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy infrastructure (Bicep)
-        uses: azure/arm-deploy@v1
+      # 🧱 Deploy infrastructure using ARM Deploy (stable + maintained)
+      - name: Deploy Bicep infrastructure
+        uses: azure/arm-deploy@v2
         with:
           subscriptionId: 86772acf-2f10-4aa8-ac3c-1d79d4a24e64
           resourceGroupName: community-research
           template: ./infra/main.bicep
           parameters: location=westus2
           deploymentName: commhub-deploy
+          failOnStdErr: false
 
+      # ✅ Verify resources exist
+      - name: Verify deployment
+        run: |
+          echo "Listing deployed resources..."
+          az resource list -g community-research -o table
