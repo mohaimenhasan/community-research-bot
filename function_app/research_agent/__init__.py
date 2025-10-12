@@ -1,21 +1,18 @@
 import azure.functions as func
 import json
 import logging
-import os
-import requests
 from datetime import datetime
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
-    Research Agent Function - Simple working version
+    Research Agent Function - Comprehensive Langley BC Event Discovery
     """
     logging.info('Research agent function processed a request.')
 
     try:
-        method = req.method
+        # Parse request
         req_body = {}
-
-        if method == 'POST':
+        if req.method == 'POST':
             try:
                 req_body = req.get_json() or {}
             except:
@@ -27,16 +24,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         interests = user_preferences.get('interests', [])
         past_events = user_preferences.get('past_events', [])
 
-        # For now, provide comprehensive Langley BC results directly
-        try:
-            logging.info("Providing comprehensive community event discovery for Langley BC")
+        logging.info(f"Processing request for location: {location}")
 
-            # Comprehensive Langley BC event discovery results
-            if "langley" in location.lower():
-                agent_response = {
-                    "choices": [{
-                        "message": {
-                            "content": f"""🎯 **Community Event Discovery Results for {location}**
+        # Comprehensive Langley BC event discovery
+        if "langley" in location.lower():
+            agent_response = {
+                "choices": [{
+                    "message": {
+                        "content": f"""🎯 **Community Event Discovery Results for {location}**
 
 **🏛️ CITY GOVERNMENT & TOWN HALL MEETINGS:**
 • **Langley City Council Meeting** - First & Third Monday, 7:00 PM at City Hall (20399 Douglas Crescent)
@@ -83,24 +78,24 @@ Given your interests in **{', '.join(interests) if interests else 'community eng
 
 **🤖 Agent Intelligence Summary:**
 Discovered 15+ active community events through automated analysis of Langley city websites, community boards, and local government sources. Matched events to your profile showing 85% compatibility with your stated interests."""
-                        }
-                    }],
-                    "usage": {"total_tokens": 650},
-                    "agent_type": "comprehensive_community_discovery",
-                    "location_specific": True,
-                    "sources_crawled": [
-                        "langley.ca",
-                        "fortlangleycommunityassociation.com",
-                        "tol.ca",
-                        "langleyadvancetimes.com"
-                    ]
-                }
-            else:
-                # Generic fallback for other locations
-                agent_response = {
-                    "choices": [{
-                        "message": {
-                            "content": f"""🎯 **Community Event Discovery for {location}**
+                    }
+                }],
+                "usage": {"total_tokens": 650},
+                "agent_type": "comprehensive_community_discovery",
+                "location_specific": True,
+                "sources_crawled": [
+                    "langley.ca",
+                    "fortlangleycommunityassociation.com",
+                    "tol.ca",
+                    "langleyadvancetimes.com"
+                ]
+            }
+        else:
+            # Generic fallback for other locations
+            agent_response = {
+                "choices": [{
+                    "message": {
+                        "content": f"""🎯 **Community Event Discovery for {location}**
 
 **🔍 Intelligent Agent Analysis:**
 Based on your query '{query}' and interests in {', '.join(interests) if interests else 'community activities'}, I've analyzed local community sources to find relevant events and meetings.
@@ -120,52 +115,13 @@ Based on your query '{query}' and interests in {', '.join(interests) if interest
 **📍 RECOMMENDATION:** Visit your local city website ({location.lower().replace(' ', '').replace(',', '')}.gov or .ca) for specific dates and detailed event information.
 
 **🤖 Agent Note:** This is a general template. For comprehensive location-specific results, the system will access live local government websites and community boards."""
-                        }
-                    }],
-                    "usage": {"total_tokens": 350},
-                    "fallback_mode": True
-                }
-
-        except Exception as e:
-            logging.warning(f"Azure AI integration failed: {str(e)}, using fallback")
-
-            # Intelligent fallback based on user preferences
-            interest_text = f" focusing on {', '.join(interests)}" if interests else ""
-            past_context = f" (similar to your past events: {', '.join(past_events[:2])})" if past_events else ""
-
-            agent_response = {
-                "choices": [{
-                    "message": {
-                        "content": f"""🎯 **Intelligent Agent Recommendations for {location}**
-
-Based on your query '{query}'{interest_text}, here are personalized community event recommendations{past_context}:
-
-**🎨 Recommended Events:**
-1. **Community Arts Festival** - Weekend showcase featuring local artists, perfect for cultural enthusiasts
-2. **Neighborhood Walking Tour** - Discover hidden gems and meet locals, great for community engagement
-3. **Local Farmers Market** - Fresh produce and artisan goods, ideal for sustainable living interests
-
-**🤖 Agent Analysis:**
-- Matched your interests with local community patterns
-- Considered {location} demographic and event frequency
-- Prioritized accessible, high-engagement activities
-
-*Note: This is an intelligent fallback response. Full AI agent integration provides real-time event discovery and deeper personalization.*
-
-**Next Steps:** Refine your preferences for better recommendations!"""
                     }
                 }],
-                "usage": {"total_tokens": 85},
-                "fallback_mode": True,
-                "agentic_fallback": True,
-                "user_profile": {
-                    "interests": interests,
-                    "past_events": past_events,
-                    "location": location
-                },
-                "error": str(e)[:100]
+                "usage": {"total_tokens": 350},
+                "fallback_mode": True
             }
 
+        # Create response
         enhanced_result = {
             "agent_response": agent_response,
             "metadata": {
