@@ -2,7 +2,7 @@ import azure.functions as func
 import json
 import logging
 from datetime import datetime, timezone
-from .foundry_helper import call_foundry_agent
+# from .foundry_helper import call_foundry_agent
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -61,23 +61,29 @@ Provide sources when possible and prioritize recent, relevant information."""
             }
         ]
 
+        # Temporarily bypass foundry call completely to test function structure
         try:
-            # Call Foundry agent using helper function with timeout handling
-            logging.info("Starting Foundry agent call")
-            result = call_foundry_agent(messages, tools)
-            logging.info("Foundry agent call completed successfully")
-        except Exception as e:
-            # Fallback to mock response if Foundry call fails
-            logging.warning(f"Foundry agent call failed, using fallback: {str(e)}")
+            logging.info("Starting test without foundry helper")
             result = {
                 "choices": [{
                     "message": {
-                        "content": f"Mock research summary for {query} in {location}: Community is active with various local events and initiatives. This is a fallback response when the Foundry agent is unavailable. Error: {str(e)[:100]}"
+                        "content": f"Test research summary for {query} in {location}: This is a test response without any external calls to verify function structure works."
                     }
                 }],
-                "usage": {"total_tokens": 50},
-                "fallback_response": True,
-                "error_details": str(e)
+                "usage": {"total_tokens": 25},
+                "test_mode": True
+            }
+            logging.info("Test response created successfully")
+        except Exception as e:
+            logging.error(f"Error creating test response: {str(e)}")
+            result = {
+                "choices": [{
+                    "message": {
+                        "content": f"Error in test mode: {str(e)}"
+                    }
+                }],
+                "usage": {"total_tokens": 10},
+                "error_mode": True
             }
 
         # Enhanced response with metadata
