@@ -165,9 +165,9 @@ const LoginForm = () => {
       </div>
 
       {/* Demo Notice */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <p className="text-sm text-yellow-800">
-          <strong>Demo Mode:</strong> Click any sign-in button to continue. Azure AD B2C will be configured for production.
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <p className="text-sm text-blue-800">
+          <strong>Demo Mode:</strong> Click any sign-in button to explore the Community Hub. Full authentication coming soon!
         </p>
       </div>
     </div>
