@@ -1,5 +1,6 @@
 azure-functions
 requests
-openai
 azure-identity
 azure-search-documents
+azure-cosmos
+azure-core

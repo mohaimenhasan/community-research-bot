@@ -173,3 +173,33 @@ grep -r "[a-f0-9]{32}" function_app/ --exclude-dir=__pycache__
 # Verify environment variables are used correctly
 grep -r "os.environ.get\|os.getenv" function_app/
 ```
+
+## Task Completion Documentation
+
+### Critical Practice: Always Document Progress
+**MANDATORY**: At the end of every development session, document what was completed and what's next in this format:
+
+```markdown
+## Development Session Summary - [DATE]
+
+### Completed Tasks:
+- [ ] Task 1 description
+- [ ] Task 2 description
+
+### Current Status:
+- Working directory state
+- Any ongoing processes
+- Environment configuration changes
+
+### Next Steps:
+- [ ] Next priority task
+- [ ] Dependencies or blockers
+- [ ] Required resources or access
+
+### Important Notes:
+- Any critical decisions made
+- Temporary workarounds implemented
+- Configuration changes that need follow-up
+```
+
+This ensures continuity when resuming work and prevents loss of context between sessions.
