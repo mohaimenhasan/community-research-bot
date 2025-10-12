@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
-from .foundry_helper import call_foundry_agent
+# from .foundry_helper import call_foundry_agent
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -62,11 +62,12 @@ Provide sources when possible and prioritize recent, relevant information."""
             }
         ]
 
+        # Temporarily bypass Foundry call to isolate issue
         try:
-            # Call Foundry agent using helper function with timeout handling
             logging.info("Starting Foundry agent call")
-            result = call_foundry_agent(messages, tools)
-            logging.info("Foundry agent call completed successfully")
+            # result = call_foundry_agent(messages, tools)
+            # For debugging, use fallback response temporarily
+            raise Exception("Temporarily using fallback for debugging")
         except Exception as e:
             # Fallback to mock response if Foundry call fails
             logging.warning(f"Foundry agent call failed, using fallback: {str(e)}")
