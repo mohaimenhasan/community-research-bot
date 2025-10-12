@@ -63,19 +63,22 @@ Provide sources when possible and prioritize recent, relevant information."""
         ]
 
         try:
-            # Call Foundry agent using helper function
+            # Call Foundry agent using helper function with timeout handling
+            logging.info("Starting Foundry agent call")
             result = call_foundry_agent(messages, tools)
+            logging.info("Foundry agent call completed successfully")
         except Exception as e:
             # Fallback to mock response if Foundry call fails
             logging.warning(f"Foundry agent call failed, using fallback: {str(e)}")
             result = {
                 "choices": [{
                     "message": {
-                        "content": f"Mock research summary for {query} in {location}: Community is active with various local events and initiatives. This is a fallback response when the Foundry agent is unavailable."
+                        "content": f"Mock research summary for {query} in {location}: Community is active with various local events and initiatives. This is a fallback response when the Foundry agent is unavailable. Error: {str(e)[:100]}"
                     }
                 }],
                 "usage": {"total_tokens": 50},
-                "fallback_response": True
+                "fallback_response": True,
+                "error_details": str(e)
             }
 
         # Enhanced response with metadata

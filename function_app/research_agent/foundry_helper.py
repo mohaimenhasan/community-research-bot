@@ -14,6 +14,8 @@ def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str
         agent_id = os.environ.get('AGENT_ID')
         azure_openai_key = os.environ.get('AZURE_OPENAI_KEY')
 
+        logging.info(f"Environment check - RESOURCE_NAME: {resource_name}, AGENT_ID: {agent_id}, Has key: {bool(azure_openai_key)}")
+
         if not all([resource_name, agent_id]):
             raise ValueError("Missing required environment variables")
 
@@ -31,15 +33,31 @@ def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str
             payload["tools"] = tools
 
         logging.info(f"Calling Foundry agent endpoint {url}")
+        logging.info(f"Payload size: {len(json.dumps(payload))} characters")
 
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+
+        logging.info(f"Response status: {response.status_code}")
+
+        if response.status_code != 200:
+            logging.error(f"HTTP Error {response.status_code}: {response.text}")
+
         response.raise_for_status()
 
         try:
-            return response.json()
+            result = response.json()
+            logging.info(f"Foundry response received successfully")
+            return result
         except json.JSONDecodeError:
+            logging.warning("Invalid JSON response, returning raw text")
             return {"raw_response": response.text}
 
+    except requests.Timeout:
+        logging.error("Foundry agent call timed out")
+        raise
+    except requests.RequestException as e:
+        logging.error(f"Foundry agent request failed: {str(e)}")
+        raise
     except Exception as e:
         logging.error(f"Foundry agent call failed: {str(e)}")
         raise
