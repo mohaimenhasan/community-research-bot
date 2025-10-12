@@ -1,24 +1,24 @@
 @description('Deployment location')
-param location string = 'eastus'
+param location string = resourceGroup().location
 
 @description('Base name prefix for all resources')
 param baseName string = 'commhub'
 
 // ---------- Storage Account ----------
 resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: toLower('${baseName}store${uniqueString(resourceGroup().id)}')
+  name: take(toLower('${baseName}${uniqueString(resourceGroup().id)}'), 24)
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
 }
 
-// ---------- Flex Consumption Plan ----------
+// ---------- Consumption Plan ----------
 resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {
-  name: '${baseName}-flexplan'
+  name: '${baseName}-plan'
   location: location
   sku: {
-    name: 'FC1'
-    tier: 'FlexConsumption'
+    name: 'Y1'
+    tier: 'Dynamic'
   }
   kind: 'functionapp'
 }
