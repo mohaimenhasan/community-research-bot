@@ -2,7 +2,7 @@ import azure.functions as func
 import json
 import logging
 from datetime import datetime, timezone
-# from .foundry_helper import call_foundry_agent
+from .foundry_helper import call_foundry_agent
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -61,29 +61,23 @@ Provide sources when possible and prioritize recent, relevant information."""
             }
         ]
 
-        # Temporarily bypass foundry call completely to test function structure
         try:
-            logging.info("Starting test without foundry helper")
-            result = {
-                "choices": [{
-                    "message": {
-                        "content": f"Test research summary for {query} in {location}: This is a test response without any external calls to verify function structure works."
-                    }
-                }],
-                "usage": {"total_tokens": 25},
-                "test_mode": True
-            }
-            logging.info("Test response created successfully")
+            # Call Foundry agent using helper function with managed identity
+            logging.info("Starting Azure AI call with managed identity")
+            result = call_foundry_agent(messages, tools)
+            logging.info("Azure AI call completed successfully")
         except Exception as e:
-            logging.error(f"Error creating test response: {str(e)}")
+            # Fallback to mock response if Azure AI call fails
+            logging.warning(f"Azure AI call failed, using fallback: {str(e)}")
             result = {
                 "choices": [{
                     "message": {
-                        "content": f"Error in test mode: {str(e)}"
+                        "content": f"Mock research summary for {query} in {location}: Community is active with various local events and initiatives. This is a fallback response when Azure AI is unavailable. Error: {str(e)[:100]}"
                     }
                 }],
-                "usage": {"total_tokens": 10},
-                "error_mode": True
+                "usage": {"total_tokens": 50},
+                "fallback_response": True,
+                "error_details": str(e)
             }
 
         # Enhanced response with metadata
