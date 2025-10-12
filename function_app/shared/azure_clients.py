@@ -20,7 +20,7 @@ class FoundryClient:
         if not self.resource_name:
             raise ValueError("RESOURCE_NAME environment variable is required")
 
-        self.base_url = f"https://{self.resource_name}.services.ai.azure.com"
+        self.base_url = f"https://{self.resource_name}.cognitiveservices.azure.com"
 
     def call_agent(self, messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
         """Call specific Azure AI Foundry agent"""

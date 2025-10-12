@@ -22,7 +22,7 @@ Community Hub is an AI-powered local news and content platform built on Azure Fu
 
 ### Azure AI Foundry Integration Pattern
 All functions use the standardized Foundry API format:
-- **Base URL**: `https://{RESOURCE_NAME}.services.ai.azure.com/`
+- **Base URL**: `https://{RESOURCE_NAME}.cognitiveservices.azure.com/`
 - **API Version**: `2024-05-01-preview`
 - **Authentication**: `api-key` header format (not Bearer tokens)
 - **Agent Endpoint**: `/openai/agents/{AGENT_ID}/runs` for agent-specific calls

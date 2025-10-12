@@ -19,7 +19,7 @@ def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str
         if not all([resource_name, agent_id]):
             raise ValueError("Missing required environment variables")
 
-        url = f"https://{resource_name}.services.ai.azure.com/openai/agents/{agent_id}/runs?api-version=2024-05-01-preview"
+        url = f"https://{resource_name}.cognitiveservices.azure.com/openai/agents/{agent_id}/runs?api-version=2024-05-01-preview"
 
         headers = {"Content-Type": "application/json"}
 
