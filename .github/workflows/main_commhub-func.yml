@@ -26,11 +26,13 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r function_app/requirements.txt  # ✅ fixed path
 
       - name: Zip artifact for deployment
         run: |
-          zip -r release.zip host.json requirements.txt function_app
+          cd function_app
+          zip -r ../release.zip .
+          cd ..
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -61,7 +63,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1AAEAC46E76B4BA2B833F5F8524B245D }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_25116412D34744D181FFD48E260CACAF }}
 
-      - name: 'Deploy to Azure Functions'
+      - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         id: deploy-to-function
         with:
