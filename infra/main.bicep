@@ -1,5 +1,5 @@
 @description('Deployment location')
-param location string = 'eastus'   // 🟢 Fixed region: East US
+param location string = 'eastus'
 
 @description('Base name prefix for all resources')
 param baseName string = 'commhub'
@@ -12,21 +12,19 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   kind: 'StorageV2'
 }
 
-// ---------- App Service Plan (Basic B1) ----------
-resource plan 'Microsoft.Web/serverfarms@2022-09-01' = {
-  name: '${baseName}-plan'
+// ---------- Flex Consumption Plan ----------
+resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {
+  name: '${baseName}-flexplan'
   location: location
   sku: {
-    name: 'B1'
-    tier: 'Basic'
-    size: 'B1'
-    capacity: 1
+    name: 'FC1'
+    tier: 'FlexConsumption'
   }
-  kind: 'app'
+  kind: 'functionapp'
 }
 
 // ---------- Function App ----------
-resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
+resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
   name: '${baseName}-func'
   location: location
   kind: 'functionapp'
@@ -38,7 +36,6 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
         { name: 'AzureWebJobsStorage', value: storage.listKeys().keys[0].value }
         { name: 'WEBSITE_RUN_FROM_PACKAGE', value: '1' }
-        { name: 'SCM_DO_BUILD_DURING_DEPLOYMENT', value: '1' }
       ]
     }
     httpsOnly: true
