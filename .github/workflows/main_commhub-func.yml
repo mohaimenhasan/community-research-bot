@@ -29,7 +29,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        run: |
+          zip -r release.zip host.json requirements.txt function_app
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
