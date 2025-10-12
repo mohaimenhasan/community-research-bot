@@ -6,7 +6,7 @@ import logging
 import requests
 import json
 from typing import Dict, Any, Optional
-from azure.identity import DefaultAzureCredential
+# from azure.identity import DefaultAzureCredential  # Temporarily removed to test import issue
 
 def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
     """Call Azure AI using managed identity authentication"""
