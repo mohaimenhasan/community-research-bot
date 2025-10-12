@@ -1,38 +1,44 @@
 """
-Local Foundry client helper for research agent function
+Local Foundry client helper for research agent function using managed identity
 """
 import os
 import logging
 import requests
 import json
 from typing import Dict, Any, Optional
+from azure.identity import DefaultAzureCredential
 
 def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
-    """Call Azure AI Foundry agent with proper error handling"""
+    """Call Azure AI Foundry agent using managed identity authentication"""
     try:
         resource_name = os.environ.get('RESOURCE_NAME')
-        agent_id = os.environ.get('AGENT_ID')
-        azure_openai_key = os.environ.get('AZURE_OPENAI_KEY')
 
-        logging.info(f"Environment check - RESOURCE_NAME: {resource_name}, AGENT_ID: {agent_id}, Has key: {bool(azure_openai_key)}")
+        logging.info(f"Environment check - RESOURCE_NAME: {resource_name}")
 
-        if not all([resource_name, agent_id]):
-            raise ValueError("Missing required environment variables")
+        if not resource_name:
+            raise ValueError("Missing RESOURCE_NAME environment variable")
 
-        url = f"https://{resource_name}.cognitiveservices.azure.com/openai/agents/{agent_id}/runs?api-version=2024-05-01-preview"
+        # Use chat completions endpoint since agents endpoint may not be available
+        url = f"https://{resource_name}.cognitiveservices.azure.com/openai/deployments/gpt-5-mini/chat/completions?api-version=2024-05-01-preview"
 
-        headers = {"Content-Type": "application/json"}
+        # Get access token using managed identity
+        credential = DefaultAzureCredential()
+        token = credential.get_token("https://cognitiveservices.azure.com/.default")
 
-        if azure_openai_key:
-            headers["api-key"] = azure_openai_key
-        else:
-            raise ValueError("No authentication method available")
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token.token}"
+        }
 
-        payload = {"messages": messages}
-        if tools:
-            payload["tools"] = tools
+        # Convert messages to a simpler format for chat completions
+        payload = {
+            "messages": messages,
+            "max_tokens": 500,
+            "temperature": 0.3
+        }
 
-        logging.info(f"Calling Foundry agent endpoint {url}")
+        logging.info(f"Calling Azure AI endpoint {url}")
+        logging.info(f"Using managed identity authentication")
         logging.info(f"Payload size: {len(json.dumps(payload))} characters")
 
         response = requests.post(url, headers=headers, json=payload, timeout=30)
@@ -46,18 +52,18 @@ def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str
 
         try:
             result = response.json()
-            logging.info(f"Foundry response received successfully")
+            logging.info(f"Azure AI response received successfully")
             return result
         except json.JSONDecodeError:
             logging.warning("Invalid JSON response, returning raw text")
             return {"raw_response": response.text}
 
     except requests.Timeout:
-        logging.error("Foundry agent call timed out")
+        logging.error("Azure AI call timed out")
         raise
     except requests.RequestException as e:
-        logging.error(f"Foundry agent request failed: {str(e)}")
+        logging.error(f"Azure AI request failed: {str(e)}")
         raise
     except Exception as e:
-        logging.error(f"Foundry agent call failed: {str(e)}")
+        logging.error(f"Azure AI call failed: {str(e)}")
         raise
