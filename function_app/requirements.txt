@@ -4,3 +4,5 @@ azure-identity
 azure-search-documents
 azure-cosmos
 azure-core
+beautifulsoup4
+lxml

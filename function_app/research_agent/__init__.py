@@ -3,11 +3,51 @@ import json
 import logging
 from datetime import datetime
 
+def _format_content_list(content_list):
+    """Helper function to format scraped content for LLM processing"""
+    if not content_list:
+        return "No content found"
+
+    formatted = []
+    for item in content_list:
+        if isinstance(item, dict):
+            if 'title' in item:
+                formatted.append(f"- {item['title']}")
+                if 'date' in item:
+                    formatted.append(f"  Date: {item['date']}")
+                if 'description' in item:
+                    formatted.append(f"  Description: {item['description']}")
+                if 'location' in item:
+                    formatted.append(f"  Location: {item['location']}")
+                if 'source' in item:
+                    formatted.append(f"  Source: {item['source']}")
+            elif 'headline' in item:
+                formatted.append(f"- {item['headline']}")
+                if 'summary' in item:
+                    formatted.append(f"  Summary: {item['summary']}")
+                if 'date' in item:
+                    formatted.append(f"  Date: {item['date']}")
+        formatted.append("")
+
+    return "\n".join(formatted)
+
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Research Agent Function - Comprehensive Langley BC Event Discovery
     """
     logging.info('Research agent function processed a request.')
+
+    # Handle CORS preflight requests
+    if req.method == 'OPTIONS':
+        return func.HttpResponse(
+            "",
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
+        )
 
     try:
         # Parse request
@@ -26,99 +66,93 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         logging.info(f"Processing request for location: {location}")
 
-        # Comprehensive Langley BC event discovery
-        if "langley" in location.lower():
+        # Import the web scraper and Foundry helper
+        try:
+            from .foundry_helper import call_foundry_agent
+            from shared.web_scraper import WebScraper
+
+            # Initialize web scraper and fetch actual content
+            logging.info(f"Scraping real content for {location}")
+            scraper = WebScraper()
+            scraped_content = scraper.scrape_bellevue_sources(location)
+
+            # Format the scraped content for the LLM to process
+            content_summary = f"""REAL CONTENT FOUND FOR {location}:
+
+GOVERNMENT & MEETINGS:
+{_format_content_list(scraped_content.get('government', []))}
+
+COMMUNITY EVENTS:
+{_format_content_list(scraped_content.get('events', []))}
+
+LOCAL NEWS:
+{_format_content_list(scraped_content.get('news', []))}
+
+PUBLIC SERVICES:
+{_format_content_list(scraped_content.get('services', []))}"""
+
+            # Create intelligent prompt for processing the scraped content
+            system_prompt = f"""You are a community content curator creating an engaging news feed. I have scraped REAL, current content from {location} sources.
+
+Your task: Transform this scraped content into compelling, readable community stories that people want to read.
+
+CONTENT FORMATTING REQUIREMENTS:
+1. Use markdown sections: **🏛️ GOVERNMENT & MUNICIPAL:** **🎪 COMMUNITY EVENTS:** **📰 LOCAL NEWS:** **🏢 PUBLIC SERVICES:**
+2. Each item should have a compelling headline in bold, followed by engaging details
+3. Include specific dates, times, locations, and contact info when available
+4. Write in a friendly, informative tone that makes people want to participate
+5. Focus on what's happening NOW and what people can actually do
+6. Make each item feel like a mini news story or event announcement
+
+EXAMPLE FORMAT:
+• **Event Title** - When and Where
+  Engaging description that makes people want to attend or learn more
+
+USER INTERESTS: {', '.join(interests) if interests else 'general community engagement'}
+
+Transform the scraped content below into an engaging community feed:"""
+
+            user_prompt = content_summary
+
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
+
+            # Call Azure Foundry AI to process the scraped content
+            logging.info(f"Processing scraped content for {location}")
+            agent_response = call_foundry_agent(messages)
+
+            # Let the agent response go through without hardcoded fallbacks
+            logging.info("Azure Foundry Agent response received - using real agent output")
+
+            # Add research agent metadata
+            agent_response["location_specific"] = True
+            agent_response["research_agent_active"] = True
+
+            # Sources will be dynamically discovered by the AI research agent
+            # This represents the agent's actual source discovery capability
+            agent_response["discovery_status"] = "sources_identified"
+            agent_response["content_categories"] = [
+                "Government & Municipal",
+                "Community Events",
+                "Local News",
+                "Public Announcements",
+                "Community Organizations"
+            ]
+
+        except Exception as foundry_error:
+            logging.error(f"Foundry AI call failed: {str(foundry_error)}")
+            # Minimal fallback - the agent should be doing the real work
             agent_response = {
                 "choices": [{
                     "message": {
-                        "content": f"""🎯 **Community Event Discovery Results for {location}**
-
-**🏛️ CITY GOVERNMENT & TOWN HALL MEETINGS:**
-• **Langley City Council Meeting** - First & Third Monday, 7:00 PM at City Hall (20399 Douglas Crescent)
-• **Public Consultation Session** - Community Input on Willoughby Transit Hub, October 25th, 6:30 PM
-• **Budget Planning Meeting** - October 28th, 7:00 PM, City Hall - Open to public input
-• **Parks & Recreation Committee** - November 2nd, 6:00 PM, Community involvement welcome
-
-**🎪 COMMUNITY EVENTS & FESTIVALS:**
-• **Langley Farmers Market** - Every Saturday 9 AM-2 PM at Douglas Park (ongoing through October)
-• **Fort Langley Cranberry Festival** - October 14-15, Historic Fort Langley (music, food, heritage)
-• **Walnut Grove Community Centre Fall Fair** - October 19th, 10 AM-4 PM (family activities, local vendors)
-• **Halloween Harvest Festival** - October 27th, Derek Doubleday Arboretum (costume contest, pumpkin carving)
-
-**🎨 CULTURAL & ARTS EVENTS:**
-• **Langley Community Theatre** - "The Importance of Being Earnest" Oct 20-Nov 5, Fort Langley Community Hall
-• **Gallery Hiestand Artist Reception** - October 21st, 2-4 PM (local artist showcase)
-• **Township of Langley Museum Heritage Talk** - "Early Settlement Stories" October 26th, 7 PM
-
-**👥 COMMUNITY MEETINGS & VOLUNTEER OPPORTUNITIES:**
-• **Langley Environmental Partners Society** - Monthly meeting Oct 24th, 7 PM, Al Anderson Pool
-• **Rotary Club of Langley Central** - Weekly Wednesdays 12:15 PM, Newlands Golf & Country Club
-• **Community Garden Work Party** - October 21st, 9 AM-12 PM, Nicomekl Riverside Park
-
-**🏃 RECREATION & SPORTS:**
-• **Langley Walk for Alzheimer's** - October 15th, 10 AM, Douglas Park (registration required)
-• **Fall Soccer League Registration** - Youth programs, ongoing at Willoughby Community Park
-• **Senior's Swimming Program** - Mondays/Wednesdays/Fridays 10 AM, Al Anderson Pool
-
-**🎯 PERSONALIZED RECOMMENDATIONS BASED ON YOUR PROFILE:**
-
-Given your interests in **{', '.join(interests) if interests else 'community engagement'}** and past participation in **{', '.join(past_events) if past_events else 'various community activities'}**:
-
-1. **HIGHLY RECOMMENDED: City Council Meetings** - Perfect match for your local government interest. Next meeting Oct 16th covers budget discussions affecting community programs.
-
-2. **PERFECT FIT: Fort Langley Cranberry Festival** - Combines cultural heritage with community gathering, similar to the festivals you've enjoyed.
-
-3. **IDEAL MATCH: Environmental Partners Society Meeting** - Aligns with community engagement interests and provides networking with like-minded residents.
-
-**📍 LOCAL NEWS SOURCES DISCOVERED:**
-• City of Langley Official Website: langley.ca/news-events
-• Langley Advance Times: langleyadvancetimes.com
-• Fort Langley Community Association: fortlangleycommunityassociation.com
-• Township of Langley: tol.ca/news-updates
-
-**🤖 Agent Intelligence Summary:**
-Discovered 15+ active community events through automated analysis of Langley city websites, community boards, and local government sources. Matched events to your profile showing 85% compatibility with your stated interests."""
+                        "content": f"⚠️ **Azure Foundry Agent Error**\n\nOur research agent for {location} is currently experiencing issues.\n\nError: {str(foundry_error)}\n\nPlease try again in a moment for real-time community event discovery."
                     }
                 }],
-                "usage": {"total_tokens": 650},
-                "agent_type": "comprehensive_community_discovery",
-                "location_specific": True,
-                "sources_crawled": [
-                    "langley.ca",
-                    "fortlangleycommunityassociation.com",
-                    "tol.ca",
-                    "langleyadvancetimes.com"
-                ]
-            }
-        else:
-            # Generic fallback for other locations
-            agent_response = {
-                "choices": [{
-                    "message": {
-                        "content": f"""🎯 **Community Event Discovery for {location}**
-
-**🔍 Intelligent Agent Analysis:**
-Based on your query '{query}' and interests in {', '.join(interests) if interests else 'community activities'}, I've analyzed local community sources to find relevant events and meetings.
-
-**🏛️ LOCAL GOVERNMENT & MEETINGS:**
-• City/Town Council meetings - typically first and third weeks of each month
-• Planning commission hearings - check local government website
-• Public consultation sessions on community development
-• Budget planning meetings with public input opportunities
-
-**🎪 COMMUNITY EVENTS:**
-• Farmers markets - typically Saturday mornings at community centers
-• Seasonal festivals and cultural celebrations
-• Community center activities and programs
-• Local library events and workshops
-
-**📍 RECOMMENDATION:** Visit your local city website ({location.lower().replace(' ', '').replace(',', '')}.gov or .ca) for specific dates and detailed event information.
-
-**🤖 Agent Note:** This is a general template. For comprehensive location-specific results, the system will access live local government websites and community boards."""
-                    }
-                }],
-                "usage": {"total_tokens": 350},
-                "fallback_mode": True
+                "usage": {"total_tokens": 50},
+                "fallback_mode": True,
+                "error": str(foundry_error)
             }
 
         # Create response
@@ -141,7 +175,12 @@ Based on your query '{query}' and interests in {', '.join(interests) if interest
         return func.HttpResponse(
             json.dumps(enhanced_result),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
         )
 
     except Exception as e:
@@ -149,5 +188,10 @@ Based on your query '{query}' and interests in {', '.join(interests) if interest
         return func.HttpResponse(
             json.dumps({"error": f"Research agent error: {str(e)}"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
         )
