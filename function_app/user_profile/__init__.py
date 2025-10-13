@@ -9,8 +9,8 @@ import os
 # Add the function_app directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from shared.storage_client import ContentStorageClient
-from shared.vector_client import VectorSearchClient
+# Demo mode - in-memory storage for user profiles
+DEMO_USER_PROFILES = {}
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -26,14 +26,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         method = req.method
         user_id = req.route_params.get('user_id')
 
-        storage_client = ContentStorageClient()
-
         if method == 'GET':
-            return handle_get_profile(req, storage_client, user_id)
+            return handle_get_profile(req, user_id)
         elif method == 'POST':
-            return handle_create_profile(req, storage_client)
+            return handle_create_profile(req)
         elif method == 'PUT':
-            return handle_update_profile(req, storage_client, user_id)
+            return handle_update_profile(req, user_id)
         else:
             return func.HttpResponse(
                 json.dumps({"error": "Method not allowed"}),
@@ -49,8 +47,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json"
         )
 
-def handle_get_profile(req: func.HttpRequest, storage_client: ContentStorageClient,
-                      user_id: str) -> func.HttpResponse:
+def handle_get_profile(req: func.HttpRequest, user_id: str) -> func.HttpResponse:
     """Get user profile and personalized content recommendations"""
     try:
         if not user_id:
@@ -60,15 +57,12 @@ def handle_get_profile(req: func.HttpRequest, storage_client: ContentStorageClie
                 mimetype="application/json"
             )
 
-        # Get user profile from storage
-        profile = get_user_profile(storage_client, user_id)
+        # Get user profile from demo storage
+        profile = get_user_profile(user_id)
 
         if not profile:
-            return func.HttpResponse(
-                json.dumps({"error": "User profile not found"}),
-                status_code=404,
-                mimetype="application/json"
-            )
+            # Create a default profile for demo users
+            profile = create_demo_profile(user_id)
 
         # Get personalized content recommendations
         include_recommendations = req.params.get('include_recommendations', 'true').lower() == 'true'
@@ -96,7 +90,7 @@ def handle_get_profile(req: func.HttpRequest, storage_client: ContentStorageClie
             mimetype="application/json"
         )
 
-def handle_create_profile(req: func.HttpRequest, storage_client: ContentStorageClient) -> func.HttpResponse:
+def handle_create_profile(req: func.HttpRequest) -> func.HttpResponse:
     """Create new user profile"""
     try:
         req_body = req.get_json()
@@ -121,7 +115,7 @@ def handle_create_profile(req: func.HttpRequest, storage_client: ContentStorageC
         user_id = req_body['user_id']
 
         # Check if profile already exists
-        existing_profile = get_user_profile(storage_client, user_id)
+        existing_profile = get_user_profile(user_id)
         if existing_profile:
             return func.HttpResponse(
                 json.dumps({"error": "User profile already exists"}),
@@ -154,7 +148,7 @@ def handle_create_profile(req: func.HttpRequest, storage_client: ContentStorageC
         }
 
         # Store profile
-        success = store_user_profile(storage_client, profile)
+        success = store_user_profile(profile)
 
         if success:
             return func.HttpResponse(
@@ -181,8 +175,7 @@ def handle_create_profile(req: func.HttpRequest, storage_client: ContentStorageC
             mimetype="application/json"
         )
 
-def handle_update_profile(req: func.HttpRequest, storage_client: ContentStorageClient,
-                         user_id: str) -> func.HttpResponse:
+def handle_update_profile(req: func.HttpRequest, user_id: str) -> func.HttpResponse:
     """Update user profile or record interaction"""
     try:
         if not user_id:
@@ -201,13 +194,10 @@ def handle_update_profile(req: func.HttpRequest, storage_client: ContentStorageC
             )
 
         # Get existing profile
-        profile = get_user_profile(storage_client, user_id)
+        profile = get_user_profile(user_id)
         if not profile:
-            return func.HttpResponse(
-                json.dumps({"error": "User profile not found"}),
-                status_code=404,
-                mimetype="application/json"
-            )
+            # Create a default profile for demo users
+            profile = create_demo_profile(user_id)
 
         update_type = req_body.get('update_type', 'profile')
 
@@ -252,7 +242,7 @@ def handle_update_profile(req: func.HttpRequest, storage_client: ContentStorageC
         profile['updated_at'] = datetime.now(timezone.utc).isoformat()
 
         # Store updated profile
-        success = store_user_profile(storage_client, profile)
+        success = store_user_profile(profile)
 
         if success:
             return func.HttpResponse(
@@ -280,62 +270,67 @@ def handle_update_profile(req: func.HttpRequest, storage_client: ContentStorageC
             mimetype="application/json"
         )
 
-def get_user_profile(storage_client: ContentStorageClient, user_id: str) -> Dict[str, Any]:
-    """Get user profile from storage"""
-    try:
-        # In a full implementation, this would use the users_container
-        # For now, returning a placeholder implementation
-        container = storage_client.users_container
-        return container.read_item(item=user_id, partition_key=user_id)
-    except Exception:
-        return None
+def get_user_profile(user_id: str) -> Dict[str, Any]:
+    """Get user profile from demo storage"""
+    return DEMO_USER_PROFILES.get(user_id)
 
-def store_user_profile(storage_client: ContentStorageClient, profile: Dict[str, Any]) -> bool:
-    """Store user profile to storage"""
+def store_user_profile(profile: Dict[str, Any]) -> bool:
+    """Store user profile to demo storage"""
     try:
-        container = storage_client.users_container
-        container.upsert_item(profile)
+        user_id = profile['user_id']
+        DEMO_USER_PROFILES[user_id] = profile
         return True
     except Exception as e:
         logging.error(f"Failed to store user profile: {str(e)}")
         return False
 
+def create_demo_profile(user_id: str) -> Dict[str, Any]:
+    """Create a default demo profile"""
+    profile = {
+        'id': user_id,
+        'user_id': user_id,
+        'primary_location': 'Bellevue, WA',
+        'additional_locations': [],
+        'interests': ['community events', 'local news', 'government'],
+        'categories': ['news', 'events', 'community'],
+        'notification_preferences': {
+            'email': True,
+            'push': True,
+            'frequency': 'daily'
+        },
+        'content_preferences': {
+            'max_articles_per_day': 10,
+            'preferred_time_slots': ['morning', 'evening'],
+            'content_length': 'medium'
+        },
+        'interaction_history': [],
+        'engagement_score': 0.0,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    }
+    store_user_profile(profile)
+    return profile
+
 def get_personalized_recommendations(profile: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Get personalized content recommendations for user"""
-    try:
-        vector_client = VectorSearchClient()
-
-        recommendations = []
-
-        # Get content based on primary location and interests
-        primary_location = profile.get('primary_location')
-        interests = profile.get('interests', [])
-
-        if primary_location:
-            # Get recent content for primary location
-            recent_content = vector_client.get_recent_content(primary_location, hours=48, top=10)
-            recommendations.extend(recent_content)
-
-            # Get content by categories of interest
-            categories = profile.get('categories', [])
-            for category in categories[:3]:  # Limit to top 3 categories
-                category_content = vector_client.search_by_category(category, primary_location, top=5)
-                recommendations.extend(category_content)
-
-        # Remove duplicates and limit results
-        seen_ids = set()
-        unique_recommendations = []
-        for item in recommendations:
-            if item.get('id') not in seen_ids:
-                seen_ids.add(item.get('id'))
-                unique_recommendations.append(item)
-
-        # Limit to reasonable number
-        return unique_recommendations[:20]
-
-    except Exception as e:
-        logging.error(f"Failed to get recommendations: {str(e)}")
-        return []
+    """Get demo personalized content recommendations for user"""
+    # Demo recommendations
+    recommendations = [
+        {
+            'id': 'demo-rec-1',
+            'title': 'City Council Meeting Tonight',
+            'category': 'government',
+            'location': 'Bellevue, WA',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        },
+        {
+            'id': 'demo-rec-2',
+            'title': 'Farmers Market This Saturday',
+            'category': 'events',
+            'location': 'Bellevue, WA',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    ]
+    return recommendations
 
 def calculate_engagement_score(interactions: List[Dict[str, Any]]) -> float:
     """Calculate user engagement score based on interaction history"""
