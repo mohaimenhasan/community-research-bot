@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any, Optional
 from azure.identity import ManagedIdentityCredential
 
-API_VERSION = "2024-05-01-preview"
+API_VERSION = "2024-10-01-preview"
 
 class FoundryClient:
     """Centralized client for Azure AI Foundry API calls"""
@@ -21,33 +21,39 @@ class FoundryClient:
         if not self.resource_name:
             raise ValueError("RESOURCE_NAME environment variable is required")
 
-        self.base_url = f"https://{self.resource_name}.services.ai.azure.com"
+        # Use the correct Azure OpenAI endpoint
+        self.base_url = f"https://{self.resource_name}.cognitiveservices.azure.com"
 
     def _get_headers(self) -> Dict[str, str]:
-        """Get authentication headers, preferring API key over managed identity"""
+        """Get authentication headers, using managed identity for AI Foundry"""
         headers = {"Content-Type": "application/json"}
 
+        # For Azure AI Foundry agents, use API key authentication
         if self.azure_openai_key:
             headers["api-key"] = self.azure_openai_key
+            logging.info("Using API key for Azure AI Foundry agent authentication")
         else:
+            # Try managed identity as fallback
             try:
                 credential = ManagedIdentityCredential()
                 token = credential.get_token("https://cognitiveservices.azure.com/.default")
                 headers["Authorization"] = f"Bearer {token.token}"
+                logging.info("Using managed identity for Azure OpenAI authentication")
             except Exception as e:
-                logging.error(f"Failed to get managed identity token: {str(e)}")
+                logging.error(f"Failed to get authentication: {str(e)}")
                 raise ValueError("No valid authentication method available")
 
         return headers
 
     def call_agent(self, messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
-        """Call specific Azure AI Foundry agent"""
-        if not self.agent_id:
-            raise ValueError("AGENT_ID environment variable is required for agent calls")
+        """Call Azure OpenAI deployment (using gpt-5-mini for research tasks)"""
+        # Use Azure OpenAI chat completions endpoint with gpt-5-mini deployment
+        url = f"{self.base_url}/openai/deployments/gpt-5-mini/chat/completions?api-version={API_VERSION}"
 
-        url = f"{self.base_url}/openai/agents/{self.agent_id}/runs?api-version={API_VERSION}"
-
-        payload = {"messages": messages}
+        payload = {
+            "messages": messages,
+            "max_completion_tokens": 800
+        }
         if tools:
             payload["tools"] = tools
 
@@ -56,12 +62,13 @@ class FoundryClient:
     def call_chat_completions(self, messages: list, max_tokens: int = 200,
                             temperature: float = 0.3) -> Dict[str, Any]:
         """Call chat completions endpoint for general LLM tasks"""
-        url = f"{self.base_url}/models/chat/completions?api-version={API_VERSION}"
+        # Use Azure OpenAI endpoint format for chat completions
+        url = f"{self.base_url}/openai/deployments/gpt-5-mini/chat/completions?api-version={API_VERSION}"
 
         payload = {
             "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature
+            "max_completion_tokens": max_tokens
+            # Remove temperature as gpt-5-mini only supports default value of 1
         }
 
         return self._make_request(url, payload, "chat_completions")

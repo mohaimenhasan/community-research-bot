@@ -59,19 +59,20 @@ export const UserProvider = ({ children }) => {
   const createUserProfile = async () => {
     try {
       const newProfile = {
-        id: user.localAccountId,
-        userId: user.localAccountId,
-        email: user.username,
-        displayName: user.name,
-        primaryLocation: null,
-        additionalLocations: [],
-        interests: [],
-        preferences: userPreferences,
-        subscription: {
-          status: 'trial',
-          tier: 'basic'
+        user_id: user.localAccountId,
+        primary_location: userPreferences.primaryLocation || {
+          city: 'Unknown',
+          state: '',
+          country: 'USA'
         },
-        createdAt: new Date().toISOString()
+        additional_locations: [],
+        interests: [],
+        categories: ['news', 'events', 'community'],
+        notification_preferences: {
+          email: true,
+          push: true,
+          frequency: 'daily'
+        }
       };
 
       const createdProfile = await apiService.createUserProfile(newProfile);

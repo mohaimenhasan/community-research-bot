@@ -80,7 +80,12 @@ def handle_get_profile(req: func.HttpRequest, storage_client: ContentStorageClie
         return func.HttpResponse(
             json.dumps(profile),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
         )
 
     except Exception as e:

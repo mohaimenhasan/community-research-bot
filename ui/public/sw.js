@@ -4,9 +4,8 @@
 const CACHE_NAME = 'community-hub-v1';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json'
+  '/manifest.json',
+  '/favicon.svg'
 ];
 
 // Install event - cache resources

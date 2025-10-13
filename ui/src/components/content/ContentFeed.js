@@ -24,10 +24,26 @@ const ContentFeed = ({ content, onRefresh, location }) => {
     );
   }
 
-  // Parse the markdown-style content from our agent
+  // Parse the markdown-style content from our Research Agent
   const parseContent = (text) => {
-    const sections = text.split('**🏛️').slice(1); // Split by section headers
-    return sections.map(section => {
+    // Handle Research Agent discovery status
+    if (text.includes('🔍 **Research Agent Discovery Status**')) {
+      return [{
+        title: 'Research Agent - Source Discovery',
+        items: [
+          'Identifying local information sources',
+          'Cataloging government and municipal websites',
+          'Mapping community event platforms',
+          'Building content categorization pipeline',
+          'Phase 1: Discovery and Classification Active'
+        ]
+      }];
+    }
+
+    // Split by any section header pattern: **[emoji] [TITLE]:**
+    const sections = text.split(/\*\*[🏛️🎪🎨👥🏃🎯]/);
+
+    return sections.slice(1).map((section, index) => {
       const lines = section.split('\n');
       const title = lines[0].replace(/\*\*/g, '').replace(':', '').trim();
       const items = lines
@@ -66,11 +82,11 @@ const ContentFeed = ({ content, onRefresh, location }) => {
             </div>
             <div>
               <p className="text-sm text-blue-800 font-medium">
-                Intelligent Agent Discovery
+                Research Agent - Phase 1
               </p>
               <p className="text-sm text-blue-700 mt-1">
-                Found {sections.length} categories of events for {location?.city}.
-                Match score: 85% based on your interests.
+                Discovered {sections.length} content categories for {location?.city}.
+                Source discovery and classification in progress.
               </p>
             </div>
           </div>
@@ -111,17 +127,27 @@ const ContentFeed = ({ content, onRefresh, location }) => {
         ))}
       </div>
 
-      {/* Source Information */}
-      {agentResponse.sources_crawled && (
+      {/* Research Agent Status */}
+      {agentResponse.research_agent_active && (
         <div className="card p-4">
-          <h4 className="font-medium text-gray-900 mb-3">Sources Discovered</h4>
-          <div className="space-y-2">
-            {agentResponse.sources_crawled.map((source, index) => (
-              <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
-                <ExternalLink className="w-4 h-4" />
-                <span>{source}</span>
+          <h4 className="font-medium text-gray-900 mb-3">Research Agent Status</h4>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2 text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-gray-700">Source Discovery: {agentResponse.discovery_status || 'Active'}</span>
+            </div>
+            {agentResponse.content_categories && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Content Categories:</p>
+                <div className="flex flex-wrap gap-2">
+                  {agentResponse.content_categories.map((category, index) => (
+                    <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+                      {category}
+                    </span>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}

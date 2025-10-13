@@ -1,51 +1,62 @@
-import React, { useState } from 'react';
-import { MapPin, Search, X, Navigation } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Search, X, Navigation, Clock } from 'lucide-react';
+import locationService from '../../services/locationService';
 
 const LocationSelector = ({ onLocationSelect, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [nearbyCities, setNearbyCities] = useState([]);
+  const [popularLocations, setPopularLocations] = useState([]);
+  const [locationDetected, setLocationDetected] = useState(false);
 
-  // Popular locations for quick selection
-  const popularLocations = [
-    {
-      city: 'Vancouver',
-      province: 'BC',
-      country: 'Canada',
-      coordinates: [49.2827, -123.1207]
-    },
-    {
-      city: 'Toronto',
-      province: 'ON',
-      country: 'Canada',
-      coordinates: [43.6532, -79.3832]
-    },
-    {
-      city: 'Calgary',
-      province: 'AB',
-      country: 'Canada',
-      coordinates: [51.0447, -114.0719]
-    },
-    {
-      city: 'Montreal',
-      province: 'QC',
-      country: 'Canada',
-      coordinates: [45.5017, -73.5673]
-    },
-    {
-      city: 'Ottawa',
-      province: 'ON',
-      country: 'Canada',
-      coordinates: [45.4215, -75.6972]
-    },
-    {
-      city: 'Langley',
-      province: 'BC',
-      country: 'Canada',
-      coordinates: [49.1042, -122.6604]
+  // Try to detect user location on component mount
+  useEffect(() => {
+    detectUserLocation();
+  }, []);
+
+  const detectUserLocation = async () => {
+    try {
+      setLoading(true);
+      const location = await locationService.getCurrentLocation();
+
+      setCurrentLocation(location);
+      setLocationDetected(true);
+
+      // Get nearby cities within 100 miles
+      const nearby = locationService.getCitiesWithinRadius(
+        location.coordinates[0],
+        location.coordinates[1],
+        100
+      );
+      setNearbyCities(nearby);
+
+      // Get popular locations for this area
+      const popular = locationService.getPopularLocationsForArea(
+        location.coordinates[0],
+        location.coordinates[1]
+      );
+      setPopularLocations(popular);
+
+    } catch (error) {
+      console.error('Location detection failed:', error);
+      // Show only major cities when location detection fails
+      const majorCities = [
+        { city: 'Seattle', state: 'WA', country: 'USA', coordinates: [47.6062, -122.3321] },
+        { city: 'Vancouver', province: 'BC', country: 'Canada', coordinates: [49.2827, -123.1207] },
+        { city: 'Portland', state: 'OR', country: 'USA', coordinates: [45.5152, -122.6784] },
+        { city: 'San Francisco', state: 'CA', country: 'USA', coordinates: [37.7749, -122.4194] },
+        { city: 'Los Angeles', state: 'CA', country: 'USA', coordinates: [34.0522, -118.2437] },
+        { city: 'Toronto', province: 'ON', country: 'Canada', coordinates: [43.6532, -79.3832] },
+        { city: 'New York', state: 'NY', country: 'USA', coordinates: [40.7128, -74.0060] },
+        { city: 'Chicago', state: 'IL', country: 'USA', coordinates: [41.8781, -87.6298] }
+      ];
+      setPopularLocations(majorCities);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const handleSearch = async (query) => {
     if (!query || query.length < 2) {
@@ -53,54 +64,33 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
       return;
     }
 
-    setLoading(true);
     try {
-      // Simple search through popular locations for demo
-      const results = popularLocations.filter(location =>
-        location.city.toLowerCase().includes(query.toLowerCase()) ||
-        location.province.toLowerCase().includes(query.toLowerCase())
-      );
+      // Search through our comprehensive city database
+      const results = locationService.searchCities(query);
+
+      // If user has location, add distance info
+      if (currentLocation) {
+        results.forEach(city => {
+          city.distance = Math.round(locationService.calculateDistance(
+            currentLocation.coordinates[0],
+            currentLocation.coordinates[1],
+            city.coordinates[0],
+            city.coordinates[1]
+          ));
+        });
+
+        // Sort by distance
+        results.sort((a, b) => a.distance - b.distance);
+      }
 
       setSearchResults(results);
     } catch (error) {
       console.error('Location search failed:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const getCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          // For demo, we'll use Vancouver as current location
-          // In production, this would reverse geocode the coordinates
-          const detectedLocation = {
-            city: 'Vancouver',
-            province: 'BC',
-            country: 'Canada',
-            coordinates: [position.coords.latitude, position.coords.longitude]
-          };
-
-          setCurrentLocation(detectedLocation);
-          setLoading(false);
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          setLoading(false);
-          alert('Unable to detect your location. Please search manually.');
-        }
-      );
-    } catch (error) {
-      console.error('Location detection failed:', error);
-      setLoading(false);
-    }
+    await detectUserLocation();
   };
 
   const handleLocationSelect = (location) => {
@@ -158,7 +148,7 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4 text-green-600" />
                   <span className="text-sm text-green-800">
-                    {currentLocation.city}, {currentLocation.province}
+                    {currentLocation.city}, {currentLocation.state || currentLocation.province}
                   </span>
                 </div>
                 <button
@@ -193,7 +183,7 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
                     <MapPin className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="font-medium text-gray-900">
-                        {location.city}, {location.province}
+                        {location.city}, {location.state || location.province}
                       </p>
                       <p className="text-sm text-gray-500">{location.country}</p>
                     </div>
@@ -216,7 +206,7 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
                     <MapPin className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="font-medium text-gray-900">
-                        {location.city}, {location.province}
+                        {location.city}, {location.state || location.province}
                       </p>
                       <p className="text-sm text-gray-500">{location.country}</p>
                     </div>
