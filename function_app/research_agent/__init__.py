@@ -92,25 +92,24 @@ PUBLIC SERVICES:
 {_format_content_list(scraped_content.get('services', []))}"""
 
             # Create intelligent prompt for processing the scraped content
-            system_prompt = f"""You are a community content curator creating an engaging news feed. I have scraped REAL, current content from {location} sources.
+            system_prompt = f"""You are a community research agent analyzing REAL content scraped from {location} local government and community sources.
 
-Your task: Transform this scraped content into compelling, readable community stories that people want to read.
+Your task: Create an engaging, informative community news feed based ONLY on the actual content found through web scraping.
 
-CONTENT FORMATTING REQUIREMENTS:
-1. Use markdown sections: **🏛️ GOVERNMENT & MUNICIPAL:** **🎪 COMMUNITY EVENTS:** **📰 LOCAL NEWS:** **🏢 PUBLIC SERVICES:**
-2. Each item should have a compelling headline in bold, followed by engaging details
-3. Include specific dates, times, locations, and contact info when available
-4. Write in a friendly, informative tone that makes people want to participate
-5. Focus on what's happening NOW and what people can actually do
-6. Make each item feel like a mini news story or event announcement
+CRITICAL REQUIREMENTS:
+1. ONLY use information from the scraped content provided below
+2. If minimal content was scraped, acknowledge limitations and suggest checking official sources
+3. Transform actual scraped data into readable format with markdown sections: **🏛️ GOVERNMENT & MUNICIPAL:** **🎪 COMMUNITY EVENTS:** **📰 LOCAL NEWS:** **🏢 PUBLIC SERVICES:**
+4. Include specific details found in scraped content (dates, locations, decisions, etc.)
+5. If no substantial content found, explain that web scraping encountered limitations and direct users to official websites
 
-EXAMPLE FORMAT:
-• **Event Title** - When and Where
-  Engaging description that makes people want to attend or learn more
+FORMATTING:
+• **Title from scraped content** - Date/Time from source
+  Description and details based on actual scraped information
 
 USER INTERESTS: {', '.join(interests) if interests else 'general community engagement'}
 
-Transform the scraped content below into an engaging community feed:"""
+IMPORTANT: Base your response entirely on the actual scraped content below. Do not invent or add details not found in the source material:"""
 
             user_prompt = content_summary
 

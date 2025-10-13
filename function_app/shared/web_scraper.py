@@ -162,44 +162,49 @@ class WebScraper:
                         }
                         meetings.append(meeting)
 
-            # If scraping fails, add realistic meeting coverage examples
+            # Try additional sources if no meetings found
             if not meetings:
-                meetings.extend([
-                    {
-                        "title": "City Council Meeting - October 7th Results",
-                        "date": "October 7, 2024",
-                        "coverage": "Council approved $2.3M budget increase for downtown infrastructure improvements. New bike lane project on Main Street gets green light with construction starting November. Approved rezoning for affordable housing development near transit center - 150 new units planned.",
-                        "decisions": ["Infrastructure budget approved", "Bike lane project authorized", "Affordable housing rezoning passed"],
-                        "source": "City Council Minutes"
-                    },
-                    {
-                        "title": "Emergency Council Session - Water Main Break Response",
-                        "date": "October 10, 2024",
-                        "coverage": "Council declared emergency funding for 104th Avenue water main repairs affecting 300 households. $850K allocated for immediate repairs and long-term infrastructure upgrades. Temporary water service established for affected residents.",
-                        "decisions": ["Emergency funding approved", "Temporary services authorized", "Infrastructure upgrade plan adopted"],
-                        "source": "Special Council Session"
-                    },
-                    {
-                        "title": "Planning Commission - Downtown Development Review",
-                        "date": "October 9, 2024",
-                        "coverage": "Approved mixed-use development at 110th & Bellevue Way with 200 residential units and ground-floor retail. Project includes 20% affordable housing requirement and enhanced pedestrian crossings. Construction timeline: 18 months starting Q1 2025.",
-                        "decisions": ["Mixed-use project approved", "Affordable housing requirement confirmed", "Pedestrian improvements mandated"],
-                        "source": "Planning Commission Minutes"
-                    }
-                ])
+                # Try alternative city government pages
+                alternative_urls = [
+                    "https://bellevuewa.gov/government/council",
+                    "https://bellevuewa.gov/city-news",
+                    "https://bellevuewa.gov/government/departments/city-clerks-office"
+                ]
+
+                for url in alternative_urls:
+                    try:
+                        response = self.session.get(url, timeout=10)
+                        if response.status_code == 200:
+                            soup = BeautifulSoup(response.content, 'html.parser')
+                            # Look for recent news or meeting updates
+                            recent_elements = soup.find_all(['div', 'article'], class_=re.compile(r'news|update|recent'))
+                            for element in recent_elements[:2]:
+                                title_elem = element.find(['h1', 'h2', 'h3'])
+                                if title_elem and len(title_elem.get_text().strip()) > 10:
+                                    meeting = {
+                                        "title": title_elem.get_text().strip(),
+                                        "date": self._extract_date(element.get_text()),
+                                        "coverage": self._extract_meeting_details(element.get_text()),
+                                        "source": "City Government Updates"
+                                    }
+                                    meetings.append(meeting)
+                                    if len(meetings) >= 2:
+                                        break
+                    except Exception:
+                        continue
+
+                    if meetings:
+                        break
 
         except Exception as e:
             logging.warning(f"Could not scrape meeting details: {str(e)}")
-            # Provide realistic fallback meeting coverage
-            meetings.extend([
-                {
-                    "title": "City Council Meeting - Budget Session",
-                    "date": "This week",
-                    "coverage": "Council members reviewed 2024 budget allocations with focus on transportation improvements and community services expansion. Public hearing scheduled for resident input on proposed park renovations.",
-                    "decisions": ["Budget review completed", "Public hearing scheduled", "Park renovation proposals considered"],
-                    "source": "City Council"
-                }
-            ])
+            # Only provide minimal fallback when all web scraping attempts fail
+            meetings.append({
+                "title": "City Government Information Available",
+                "date": "Current",
+                "coverage": "City government information and meeting details are available on the official Bellevue website. Web scraping temporarily unavailable.",
+                "source": "City of Bellevue"
+            })
 
         return meetings
 
