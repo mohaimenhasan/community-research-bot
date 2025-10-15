@@ -5,7 +5,12 @@ import os
 import logging
 import json
 from typing import Dict, Any, Optional
-from azure.identity import ManagedIdentityCredential
+# Handle azure.identity import with fallback
+try:
+    from azure.identity import ManagedIdentityCredential
+    AZURE_IDENTITY_AVAILABLE = True
+except ImportError:
+    AZURE_IDENTITY_AVAILABLE = False
 
 # Handle requests import with fallback
 try:
@@ -33,14 +38,14 @@ class FoundryClient:
         self.base_url = f"https://{self.resource_name}.cognitiveservices.azure.com"
 
     def _get_headers(self) -> Dict[str, str]:
-        """Get authentication headers, using managed identity for AI Foundry"""
+        """Get authentication headers, using API key or managed identity"""
         headers = {"Content-Type": "application/json"}
 
         # For Azure AI Foundry agents, use API key authentication
         if self.azure_openai_key:
             headers["api-key"] = self.azure_openai_key
             logging.info("Using API key for Azure AI Foundry agent authentication")
-        else:
+        elif AZURE_IDENTITY_AVAILABLE:
             # Try managed identity as fallback
             try:
                 credential = ManagedIdentityCredential()
@@ -50,6 +55,9 @@ class FoundryClient:
             except Exception as e:
                 logging.error(f"Failed to get authentication: {str(e)}")
                 raise ValueError("No valid authentication method available")
+        else:
+            logging.error("No authentication method available - both API key and azure.identity module missing")
+            raise ValueError("No valid authentication method available")
 
         return headers
 
