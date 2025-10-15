@@ -22,28 +22,29 @@ class LocationService {
     return degrees * (Math.PI/180);
   }
 
-  // Major global cities database for geolocation fallback
+  // Cities database prioritizing USA and Canada for your user base
   getAllCities() {
     return [
-      // Bosnia and Herzegovina
-      { city: 'Sarajevo', country: 'Bosnia and Herzegovina', coordinates: [43.8563, 18.4131] },
-      { city: 'Banja Luka', country: 'Bosnia and Herzegovina', coordinates: [44.7666, 17.1736] },
-      { city: 'Tuzla', country: 'Bosnia and Herzegovina', coordinates: [44.5386, 18.6708] },
-      { city: 'Zenica', country: 'Bosnia and Herzegovina', coordinates: [44.2035, 17.9061] },
-      { city: 'Mostar', country: 'Bosnia and Herzegovina', coordinates: [43.3438, 17.8078] },
+      // Canada - Priority for your user base
+      { city: 'Toronto', province: 'ON', country: 'Canada', coordinates: [43.6532, -79.3832] },
+      { city: 'Vancouver', province: 'BC', country: 'Canada', coordinates: [49.2827, -123.1207] },
+      { city: 'Montreal', province: 'QC', country: 'Canada', coordinates: [45.5017, -73.5673] },
+      { city: 'Calgary', province: 'AB', country: 'Canada', coordinates: [51.0447, -114.0719] },
+      { city: 'Edmonton', province: 'AB', country: 'Canada', coordinates: [53.5461, -113.4938] },
+      { city: 'Ottawa', province: 'ON', country: 'Canada', coordinates: [45.4215, -75.6972] },
+      { city: 'Winnipeg', province: 'MB', country: 'Canada', coordinates: [49.8951, -97.1384] },
+      { city: 'Quebec City', province: 'QC', country: 'Canada', coordinates: [46.8139, -71.2080] },
+      { city: 'Hamilton', province: 'ON', country: 'Canada', coordinates: [43.2557, -79.8711] },
+      { city: 'Kitchener', province: 'ON', country: 'Canada', coordinates: [43.4516, -80.4925] },
+      { city: 'London', province: 'ON', country: 'Canada', coordinates: [42.9849, -81.2453] },
+      { city: 'Halifax', province: 'NS', country: 'Canada', coordinates: [44.6488, -63.5752] },
+      { city: 'Victoria', province: 'BC', country: 'Canada', coordinates: [48.4284, -123.3656] },
+      { city: 'Windsor', province: 'ON', country: 'Canada', coordinates: [42.3149, -83.0364] },
+      { city: 'Saskatoon', province: 'SK', country: 'Canada', coordinates: [52.1332, -106.6700] },
+      { city: 'Regina', province: 'SK', country: 'Canada', coordinates: [50.4452, -104.6189] },
+      { city: 'Langley', province: 'BC', country: 'Canada', coordinates: [49.1042, -122.6604] },
 
-      // Australia
-      { city: 'Sydney', state: 'NSW', country: 'Australia', coordinates: [-33.8688, 151.2093] },
-      { city: 'Melbourne', state: 'VIC', country: 'Australia', coordinates: [-37.8136, 144.9631] },
-      { city: 'Brisbane', state: 'QLD', country: 'Australia', coordinates: [-27.4698, 153.0251] },
-      { city: 'Perth', state: 'WA', country: 'Australia', coordinates: [-31.9505, 115.8605] },
-      { city: 'Adelaide', state: 'SA', country: 'Australia', coordinates: [-34.9285, 138.6007] },
-      { city: 'Canberra', state: 'ACT', country: 'Australia', coordinates: [-35.2809, 149.1300] },
-      { city: 'Newcastle', state: 'NSW', country: 'Australia', coordinates: [-32.9283, 151.7817] },
-      { city: 'Wollongong', state: 'NSW', country: 'Australia', coordinates: [-34.4278, 150.8931] },
-      { city: 'Gold Coast', state: 'QLD', country: 'Australia', coordinates: [-28.0167, 153.4000] },
-
-      // United States
+      // United States - Priority for your user base
       { city: 'New York', state: 'NY', country: 'USA', coordinates: [40.7128, -74.0060] },
       { city: 'Los Angeles', state: 'CA', country: 'USA', coordinates: [34.0522, -118.2437] },
       { city: 'Chicago', state: 'IL', country: 'USA', coordinates: [41.8781, -87.6298] },
@@ -68,60 +69,25 @@ class LocationService {
       { city: 'Nashville', state: 'TN', country: 'USA', coordinates: [36.1627, -86.7816] },
       { city: 'Baltimore', state: 'MD', country: 'USA', coordinates: [39.2904, -76.6122] },
       { city: 'Portland', state: 'OR', country: 'USA', coordinates: [45.5152, -122.6784] },
+      { city: 'Miami', state: 'FL', country: 'USA', coordinates: [25.7617, -80.1918] },
+      { city: 'Atlanta', state: 'GA', country: 'USA', coordinates: [33.7490, -84.3880] },
+      { city: 'Tampa', state: 'FL', country: 'USA', coordinates: [27.9506, -82.4572] },
+      { city: 'Orlando', state: 'FL', country: 'USA', coordinates: [28.5383, -81.3792] },
+      { city: 'Detroit', state: 'MI', country: 'USA', coordinates: [42.3314, -83.0458] },
+      { city: 'Las Vegas', state: 'NV', country: 'USA', coordinates: [36.1699, -115.1398] },
+      { city: 'Minneapolis', state: 'MN', country: 'USA', coordinates: [44.9778, -93.2650] },
+      { city: 'Cleveland', state: 'OH', country: 'USA', coordinates: [41.4993, -81.6944] },
+      { city: 'Pittsburgh', state: 'PA', country: 'USA', coordinates: [40.4406, -79.9959] },
+      { city: 'Sacramento', state: 'CA', country: 'USA', coordinates: [38.5816, -121.4944] },
 
-      // Canada
-      { city: 'Toronto', province: 'ON', country: 'Canada', coordinates: [43.6532, -79.3832] },
-      { city: 'Vancouver', province: 'BC', country: 'Canada', coordinates: [49.2827, -123.1207] },
-      { city: 'Montreal', province: 'QC', country: 'Canada', coordinates: [45.5017, -73.5673] },
-      { city: 'Calgary', province: 'AB', country: 'Canada', coordinates: [51.0447, -114.0719] },
-      { city: 'Edmonton', province: 'AB', country: 'Canada', coordinates: [53.5461, -113.4938] },
-      { city: 'Ottawa', province: 'ON', country: 'Canada', coordinates: [45.4215, -75.6972] },
-      { city: 'Winnipeg', province: 'MB', country: 'Canada', coordinates: [49.8951, -97.1384] },
-      { city: 'Quebec City', province: 'QC', country: 'Canada', coordinates: [46.8139, -71.2080] },
-
-      // United Kingdom
+      // International cities (for global users)
       { city: 'London', country: 'United Kingdom', coordinates: [51.5074, -0.1278] },
-      { city: 'Birmingham', country: 'United Kingdom', coordinates: [52.4862, -1.8904] },
-      { city: 'Manchester', country: 'United Kingdom', coordinates: [53.4808, -2.2426] },
-      { city: 'Liverpool', country: 'United Kingdom', coordinates: [53.4084, -2.9916] },
-      { city: 'Leeds', country: 'United Kingdom', coordinates: [53.8008, -1.5491] },
-      { city: 'Sheffield', country: 'United Kingdom', coordinates: [53.3811, -1.4701] },
-      { city: 'Bristol', country: 'United Kingdom', coordinates: [51.4545, -2.5879] },
-      { city: 'Glasgow', country: 'Scotland', coordinates: [55.8642, -4.2518] },
-      { city: 'Edinburgh', country: 'Scotland', coordinates: [55.9533, -3.1883] },
-
-      // Germany
-      { city: 'Berlin', country: 'Germany', coordinates: [52.5200, 13.4050] },
-      { city: 'Hamburg', country: 'Germany', coordinates: [53.5511, 9.9937] },
-      { city: 'Munich', country: 'Germany', coordinates: [48.1351, 11.5820] },
-      { city: 'Cologne', country: 'Germany', coordinates: [50.9375, 6.9603] },
-      { city: 'Frankfurt', country: 'Germany', coordinates: [50.1109, 8.6821] },
-
-      // France
       { city: 'Paris', country: 'France', coordinates: [48.8566, 2.3522] },
-      { city: 'Marseille', country: 'France', coordinates: [43.2965, 5.3698] },
-      { city: 'Lyon', country: 'France', coordinates: [45.7640, 4.8357] },
-      { city: 'Toulouse', country: 'France', coordinates: [43.6047, 1.4442] },
-      { city: 'Nice', country: 'France', coordinates: [43.7102, 7.2620] },
-
-      // Other Balkans
-      { city: 'Belgrade', country: 'Serbia', coordinates: [44.7866, 20.4489] },
-      { city: 'Zagreb', country: 'Croatia', coordinates: [45.8150, 15.9819] },
-      { city: 'Ljubljana', country: 'Slovenia', coordinates: [46.0569, 14.5058] },
-      { city: 'Skopje', country: 'North Macedonia', coordinates: [41.9973, 21.4280] },
-      { city: 'Podgorica', country: 'Montenegro', coordinates: [42.4304, 19.2594] },
-
-      // Other major cities
-      { city: 'Vienna', country: 'Austria', coordinates: [48.2082, 16.3738] },
-      { city: 'Amsterdam', country: 'Netherlands', coordinates: [52.3676, 4.9041] },
-      { city: 'Brussels', country: 'Belgium', coordinates: [50.8503, 4.3517] },
-      { city: 'Copenhagen', country: 'Denmark', coordinates: [55.6761, 12.5683] },
-      { city: 'Stockholm', country: 'Sweden', coordinates: [59.3293, 18.0686] },
-      { city: 'Oslo', country: 'Norway', coordinates: [59.9139, 10.7522] },
-      { city: 'Helsinki', country: 'Finland', coordinates: [60.1699, 24.9384] },
-      { city: 'Prague', country: 'Czech Republic', coordinates: [50.0755, 14.4378] },
-      { city: 'Budapest', country: 'Hungary', coordinates: [47.4979, 19.0402] },
-      { city: 'Warsaw', country: 'Poland', coordinates: [52.2297, 21.0122] }
+      { city: 'Berlin', country: 'Germany', coordinates: [52.5200, 13.4050] },
+      { city: 'Sydney', state: 'NSW', country: 'Australia', coordinates: [-33.8688, 151.2093] },
+      { city: 'Melbourne', state: 'VIC', country: 'Australia', coordinates: [-37.8136, 144.9631] },
+      { city: 'Tokyo', country: 'Japan', coordinates: [35.6762, 139.6503] },
+      { city: 'Mexico City', country: 'Mexico', coordinates: [19.4326, -99.1332] }
     ];
   }
 
@@ -245,27 +211,41 @@ class LocationService {
     return location.city;
   }
 
-  // Get popular locations for the area
+  // Get popular locations for the area based on user's actual location
   getPopularLocationsForArea(lat, lon) {
-    // Get cities within 200 miles and pick the most populous/important ones
-    const nearby = this.getCitiesWithinRadius(lat, lon, 200);
+    // Get cities within 500 miles to be more inclusive for North American users
+    const nearby = this.getCitiesWithinRadius(lat, lon, 500);
 
-    // Define important cities based on population/significance
-    const importantCities = [];
+    // Prioritize nearby cities from USA and Canada
+    const priorityCountries = ['USA', 'Canada'];
 
-    const popular = nearby.filter(city =>
-      importantCities.includes(city.city)
-    ).slice(0, 8);
+    // Separate priority countries from international
+    const priorityCities = nearby.filter(city =>
+      priorityCountries.includes(city.country)
+    );
 
-    // If we don't have enough popular cities, add closest ones
-    if (popular.length < 8) {
-      const additional = nearby
-        .filter(city => !popular.find(p => p.city === city.city))
-        .slice(0, 8 - popular.length);
-      popular.push(...additional);
+    const internationalCities = nearby.filter(city =>
+      !priorityCountries.includes(city.country)
+    );
+
+    // Combine: priority cities first, then international, all sorted by distance
+    const sortedCities = [
+      ...priorityCities.slice(0, 6),  // Top 6 from USA/Canada
+      ...internationalCities.slice(0, 2)  // Top 2 international
+    ].sort((a, b) => a.distance - b.distance);
+
+    // If we don't have enough cities in range, add top cities from priority countries
+    if (sortedCities.length < 8) {
+      const allCities = this.getAllCities();
+      const topPriorityCities = allCities
+        .filter(city => priorityCountries.includes(city.country))
+        .filter(city => !sortedCities.find(s => s.city === city.city))
+        .slice(0, 8 - sortedCities.length);
+
+      sortedCities.push(...topPriorityCities);
     }
 
-    return popular;
+    return sortedCities.slice(0, 8);
   }
 }
 

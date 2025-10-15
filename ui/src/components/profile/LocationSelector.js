@@ -41,10 +41,19 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
 
     } catch (error) {
       console.error('Location detection failed:', error);
-      // Use global cities database from locationService
+      // Use priority cities for your North American user base
       const allCities = locationService.getAllCities();
-      // Show a variety of popular global cities without bias
-      setPopularLocations(allCities.slice(0, 12));
+      // Show top Canadian cities first, then US cities
+      const priorityCities = allCities.filter(city =>
+        city.country === 'Canada' || city.country === 'USA'
+      ).slice(0, 10);
+
+      // Add a couple international cities for completeness
+      const internationalCities = allCities.filter(city =>
+        city.country !== 'Canada' && city.country !== 'USA'
+      ).slice(0, 2);
+
+      setPopularLocations([...priorityCities, ...internationalCities]);
     } finally {
       setLoading(false);
     }

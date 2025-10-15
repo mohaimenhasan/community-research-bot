@@ -1,9 +1,10 @@
 # Azure Function App Dependencies
 azure-functions
-requests
+requests>=2.28.0
 azure-identity
 azure-search-documents
 azure-cosmos
 azure-core
 beautifulsoup4
 lxml
+urllib3
