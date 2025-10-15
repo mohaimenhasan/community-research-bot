@@ -41,19 +41,17 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
 
     } catch (error) {
       console.error('Location detection failed:', error);
-      // Use priority cities for your North American user base
+      // Use priority cities for your North American user base, but include global options
       const allCities = locationService.getAllCities();
-      // Show top Canadian cities first, then US cities
-      const priorityCities = allCities.filter(city =>
-        city.country === 'Canada' || city.country === 'USA'
-      ).slice(0, 10);
 
-      // Add a couple international cities for completeness
+      // Show mix: Canadian cities, US cities, and international for global users
+      const canadianCities = allCities.filter(city => city.country === 'Canada').slice(0, 5);
+      const usCities = allCities.filter(city => city.country === 'USA').slice(0, 5);
       const internationalCities = allCities.filter(city =>
         city.country !== 'Canada' && city.country !== 'USA'
-      ).slice(0, 2);
+      ).slice(0, 4);
 
-      setPopularLocations([...priorityCities, ...internationalCities]);
+      setPopularLocations([...canadianCities, ...usCities, ...internationalCities]);
     } finally {
       setLoading(false);
     }
@@ -148,9 +146,14 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <MapPin className="w-4 h-4 text-green-600" />
-                  <span className="text-sm text-green-800">
-                    {currentLocation.city}, {currentLocation.state || currentLocation.province}
-                  </span>
+                  <div>
+                    <span className="text-sm text-green-800">
+                      {currentLocation.city}, {currentLocation.state || currentLocation.province}
+                    </span>
+                    <p className="text-xs text-green-600 mt-1">
+                      Not your location? Search or choose from popular locations below
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleLocationSelect(currentLocation)}

@@ -87,7 +87,23 @@ class LocationService {
       { city: 'Sydney', state: 'NSW', country: 'Australia', coordinates: [-33.8688, 151.2093] },
       { city: 'Melbourne', state: 'VIC', country: 'Australia', coordinates: [-37.8136, 144.9631] },
       { city: 'Tokyo', country: 'Japan', coordinates: [35.6762, 139.6503] },
-      { city: 'Mexico City', country: 'Mexico', coordinates: [19.4326, -99.1332] }
+      { city: 'Mexico City', country: 'Mexico', coordinates: [19.4326, -99.1332] },
+
+      // Additional international cities
+      { city: 'Amsterdam', country: 'Netherlands', coordinates: [52.3676, 4.9041] },
+      { city: 'Barcelona', country: 'Spain', coordinates: [41.3851, 2.1734] },
+      { city: 'Rome', country: 'Italy', coordinates: [41.9028, 12.4964] },
+      { city: 'Stockholm', country: 'Sweden', coordinates: [59.3293, 18.0686] },
+      { city: 'Zurich', country: 'Switzerland', coordinates: [47.3769, 8.5417] },
+      { city: 'Dublin', country: 'Ireland', coordinates: [53.3498, -6.2603] },
+
+      // Eastern Europe & Balkans
+      { city: 'Sarajevo', country: 'Bosnia and Herzegovina', coordinates: [43.8563, 18.4131] },
+      { city: 'Belgrade', country: 'Serbia', coordinates: [44.7866, 20.4489] },
+      { city: 'Zagreb', country: 'Croatia', coordinates: [45.8150, 15.9819] },
+      { city: 'Vienna', country: 'Austria', coordinates: [48.2082, 16.3738] },
+      { city: 'Prague', country: 'Czech Republic', coordinates: [50.0755, 14.4378] },
+      { city: 'Budapest', country: 'Hungary', coordinates: [47.4979, 19.0402] }
     ];
   }
 
