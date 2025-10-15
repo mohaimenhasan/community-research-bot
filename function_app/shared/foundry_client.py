@@ -8,7 +8,7 @@ import json
 from typing import Dict, Any, Optional
 from azure.identity import ManagedIdentityCredential
 
-API_VERSION = "2024-10-01-preview"
+API_VERSION = "2024-06-01"
 
 class FoundryClient:
     """Centralized client for Azure AI Foundry API calls"""
@@ -46,18 +46,51 @@ class FoundryClient:
         return headers
 
     def call_agent(self, messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
-        """Call Azure OpenAI deployment (using gpt-5-mini for research tasks)"""
-        # Use Azure OpenAI chat completions endpoint with gpt-5-mini deployment
-        url = f"{self.base_url}/openai/deployments/gpt-5-mini/chat/completions?api-version={API_VERSION}"
+        """Call Azure AI Foundry Agent using A2A communication with Azure OpenAI Assistants API"""
+        if self.agent_id:
+            # Use Azure OpenAI Assistants API for A2A communication
+            # Create thread and run in one call (thread.runs)
+            url = f"{self.base_url}/openai/threads/runs?api-version={API_VERSION}"
 
-        payload = {
-            "messages": messages,
-            "max_completion_tokens": 800
-        }
-        if tools:
-            payload["tools"] = tools
+            # Proper A2A payload for Azure OpenAI Assistants API
+            payload = {
+                "assistant_id": self.agent_id,
+                "thread": {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": f"Create engaging community content for the location specified. Format as Instagram-style posts with hooks that get people excited. Original messages: {str(messages)}"
+                        }
+                    ]
+                },
+                "instructions": "You are a community research agent that creates engaging, Instagram-style social media content about local happenings. Your job is to transform local government and community information into exciting, shareable content that hooks people and makes them want to participate. Use emojis, excitement, and social media language. Make each post feel urgent and engaging.",
+                "max_completion_tokens": 800,
+                "stream": False
+            }
+            if tools:
+                payload["tools"] = tools
 
-        return self._make_request(url, payload, "agent")
+            return self._make_request(url, payload, "agent_run")
+        else:
+            # Fallback to direct GPT-5-mini with improved prompt
+            url = f"{self.base_url}/openai/deployments/gpt-5-mini/chat/completions?api-version={API_VERSION}"
+
+            # Enhanced system message for better GPT-5-mini performance
+            enhanced_messages = [{
+                "role": "system",
+                "content": "You are a specialized community research agent. You MUST process the scraped web content provided and transform it into a structured community news feed. DO NOT provide status updates or generic messages. Work with the actual content provided and format it according to the instructions."
+            }]
+            enhanced_messages.extend(messages)
+
+            payload = {
+                "messages": enhanced_messages,
+                "max_completion_tokens": 800,
+                "temperature": 0.1  # Lower temperature for more focused output
+            }
+            if tools:
+                payload["tools"] = tools
+
+            return self._make_request(url, payload, "agent")
 
     def call_chat_completions(self, messages: list, max_tokens: int = 200,
                             temperature: float = 0.3) -> Dict[str, Any]:

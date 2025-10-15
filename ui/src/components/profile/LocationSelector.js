@@ -41,18 +41,10 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
 
     } catch (error) {
       console.error('Location detection failed:', error);
-      // Show only major cities when location detection fails
-      const majorCities = [
-        { city: 'Seattle', state: 'WA', country: 'USA', coordinates: [47.6062, -122.3321] },
-        { city: 'Vancouver', province: 'BC', country: 'Canada', coordinates: [49.2827, -123.1207] },
-        { city: 'Portland', state: 'OR', country: 'USA', coordinates: [45.5152, -122.6784] },
-        { city: 'San Francisco', state: 'CA', country: 'USA', coordinates: [37.7749, -122.4194] },
-        { city: 'Los Angeles', state: 'CA', country: 'USA', coordinates: [34.0522, -118.2437] },
-        { city: 'Toronto', province: 'ON', country: 'Canada', coordinates: [43.6532, -79.3832] },
-        { city: 'New York', state: 'NY', country: 'USA', coordinates: [40.7128, -74.0060] },
-        { city: 'Chicago', state: 'IL', country: 'USA', coordinates: [41.8781, -87.6298] }
-      ];
-      setPopularLocations(majorCities);
+      // Use global cities database from locationService
+      const allCities = locationService.getAllCities();
+      // Show a variety of popular global cities without bias
+      setPopularLocations(allCities.slice(0, 12));
     } finally {
       setLoading(false);
     }

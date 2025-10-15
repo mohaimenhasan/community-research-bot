@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 # Add the function_app directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
+def call_foundry_agent(messages: list, tools: Optional[list] = None, location: str = "your area") -> Dict[str, Any]:
     """Call Azure Foundry AI using the centralized client"""
     try:
         from shared.foundry_client import FoundryClient
@@ -38,25 +38,10 @@ def call_foundry_agent(messages: list, tools: Optional[list] = None) -> Dict[str
         if "choices" in result and result["choices"]:
             choice = result["choices"][0]
             if "message" in choice and choice["message"].get("content") == "":
-                # If content is truly empty, let the AI know to try again with a different approach
+                # If content is empty but reasoning tokens were used, log and return error to retry
                 if "usage" in result and result["usage"].get("completion_tokens_details", {}).get("reasoning_tokens", 0) > 0:
-                    choice["message"]["content"] = f"""**Research Agent Status Update**
-
-The Research Agent is actively working to gather current information from {location} sources.
-
-**Current Process:**
-• Scanning local government websites for recent meetings and decisions
-• Checking community event calendars for upcoming activities
-• Monitoring local news sources for current developments
-• Analyzing public service announcements and updates
-
-**Next Steps:**
-• Will retry with enhanced web scraping methods
-• Cross-referencing multiple information sources
-• Processing real-time data through AI analysis
-
-Please try your request again in a moment for the most current community information."""
-                    logging.info("Provided status update - agent will retry with real scraping")
+                    logging.warning("GPT-5-mini returned empty content despite reasoning tokens - model may need different prompt")
+                    raise Exception("Model returned empty response despite processing - requires retry")
 
         return result
 

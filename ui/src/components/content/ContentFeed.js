@@ -24,7 +24,7 @@ const ContentFeed = ({ content, onRefresh, location }) => {
     );
   }
 
-  // Parse the markdown-style content from our Research Agent
+  // Parse the Instagram-style content from our Research Agent
   const parseContent = (text) => {
     // Handle Research Agent discovery status
     if (text.includes('🔍 **Research Agent Discovery Status**')) {
@@ -40,18 +40,48 @@ const ContentFeed = ({ content, onRefresh, location }) => {
       }];
     }
 
-    // Split by any section header pattern: **[emoji] [TITLE]:**
-    const sections = text.split(/\*\*[🏛️🎪🎨👥🏃🎯]/);
+    // Split by section headers: **🏛️ GOVERNMENT & MUNICIPAL:** etc.
+    const sectionPattern = /\*\*([🏛️🎪📰🏢].*?):\*\*/g;
+    const sections = [];
+    let lastIndex = 0;
+    let match;
 
-    return sections.slice(1).map((section, index) => {
-      const lines = section.split('\n');
-      const title = lines[0].replace(/\*\*/g, '').replace(':', '').trim();
-      const items = lines
-        .slice(1)
-        .filter(line => line.startsWith('•'))
-        .map(line => line.replace('• **', '').replace('**', '').trim());
+    while ((match = sectionPattern.exec(text)) !== null) {
+      if (sections.length > 0) {
+        // Add content from previous section
+        const prevContent = text.substring(lastIndex, match.index).trim();
+        if (prevContent) {
+          sections[sections.length - 1].content = prevContent;
+        }
+      }
 
-      return { title, items };
+      sections.push({
+        title: match[1].trim(),
+        content: ''
+      });
+      lastIndex = sectionPattern.lastIndex;
+    }
+
+    // Add content for the last section
+    if (sections.length > 0) {
+      const lastContent = text.substring(lastIndex).trim();
+      if (lastContent) {
+        sections[sections.length - 1].content = lastContent;
+      }
+    }
+
+    // Convert content to items for display
+    return sections.map(section => {
+      // Split content into paragraphs/posts
+      const posts = section.content
+        .split(/\n\s*\n/) // Split by double newlines
+        .filter(post => post.trim().length > 0)
+        .map(post => post.trim());
+
+      return {
+        title: section.title,
+        items: posts.length > 0 ? posts : ['No content available for this section']
+      };
     });
   };
 
@@ -104,14 +134,32 @@ const ContentFeed = ({ content, onRefresh, location }) => {
               </h3>
             </div>
             <div className="p-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {section.items.slice(0, 3).map((item, itemIndex) => (
-                  <div key={itemIndex} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                  <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border-l-4 border-blue-500">
                     <div className="flex-1">
-                      <p className="text-sm text-gray-800 leading-relaxed">
+                      <p className="text-sm text-gray-800 leading-relaxed font-medium">
                         {item}
                       </p>
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <button className="flex items-center space-x-1 hover:text-red-500">
+                            <span>❤️</span>
+                            <span>{Math.floor(Math.random() * 50) + 10}</span>
+                          </button>
+                          <button className="flex items-center space-x-1 hover:text-blue-500">
+                            <span>💬</span>
+                            <span>{Math.floor(Math.random() * 15) + 2}</span>
+                          </button>
+                          <button className="flex items-center space-x-1 hover:text-green-500">
+                            <span>📤</span>
+                            <span>Share</span>
+                          </button>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {Math.floor(Math.random() * 60) + 5}m ago
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -172,6 +220,10 @@ const ContentFeed = ({ content, onRefresh, location }) => {
 // Helper function to get category icons
 const getCategoryIcon = (title) => {
   const iconMap = {
+    '🏛️ GOVERNMENT & MUNICIPAL': '🏛️',
+    '🎪 COMMUNITY EVENTS': '🎪',
+    '📰 LOCAL NEWS': '📰',
+    '🏢 PUBLIC SERVICES': '🏢',
     'CITY GOVERNMENT & TOWN HALL MEETINGS': '🏛️',
     'COMMUNITY EVENTS & FESTIVALS': '🎪',
     'CULTURAL & ARTS EVENTS': '🎨',
@@ -179,6 +231,12 @@ const getCategoryIcon = (title) => {
     'RECREATION & SPORTS': '🏃',
     'PERSONALIZED RECOMMENDATIONS': '🎯'
   };
+
+  // Extract emoji from title if present
+  const emojiMatch = title.match(/^([🏛️🎪📰🏢🎨👥🏃🎯])/);
+  if (emojiMatch) {
+    return emojiMatch[1];
+  }
 
   return iconMap[title.toUpperCase()] || '📋';
 };

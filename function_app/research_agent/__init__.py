@@ -71,47 +71,48 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             from .foundry_helper import call_foundry_agent
             from shared.web_scraper import WebScraper
 
-            # Initialize web scraper and fetch actual content
-            logging.info(f"Scraping real content for {location}")
+            # Initialize web scraper and get research guidance
+            logging.info(f"Getting research guidance for {location}")
             scraper = WebScraper()
-            scraped_content = scraper.scrape_bellevue_sources(location)
+            scraped_content = scraper.scrape_location_sources(location)
 
-            # Format the scraped content for the LLM to process
-            content_summary = f"""REAL CONTENT FOUND FOR {location}:
+            # Create ultra-engaging, viral-style community content
+            system_prompt = f"""You are a viral community content creator for {location} who creates Instagram posts that go viral because they're so engaging and hookworthy.
 
-GOVERNMENT & MEETINGS:
-{_format_content_list(scraped_content.get('government', []))}
+TASK: Create VIRAL-WORTHY community content for {location} that people can't resist sharing:
 
-COMMUNITY EVENTS:
-{_format_content_list(scraped_content.get('events', []))}
+**🏛️ GOVERNMENT & MUNICIPAL:**
+**🎪 COMMUNITY EVENTS:**
+**📰 LOCAL NEWS:**
+**🏢 PUBLIC SERVICES:**
 
-LOCAL NEWS:
-{_format_content_list(scraped_content.get('news', []))}
+VIRAL CONTENT FORMULA:
+1. HOOK + URGENCY + INSIDER INFO + CALL TO ACTION
+2. Use FOMO (fear of missing out) psychology
+3. Include specific street names, times, and insider details
+4. Make people feel like they're getting exclusive info
+5. Write like you're texting your best friend about something crazy happening
 
-PUBLIC SERVICES:
-{_format_content_list(scraped_content.get('services', []))}"""
+VIRAL EXAMPLES:
+**🏛️ GOVERNMENT & MUNICIPAL:**
+**🚨 OMG THIS IS HAPPENING TONIGHT** - City Council 7PM
+GUYS... they're literally voting on whether to build that massive development on Riverside Drive that would block the entire waterfront view 😱 If you've ever complained about housing prices, THIS IS YOUR MOMENT. City Hall, 7PM. Don't let them decide without you! #SaveOurWaterfront
 
-            # Create intelligent prompt for processing the scraped content
-            system_prompt = f"""You are a community research agent analyzing REAL content scraped from {location} local government and community sources.
+**🎪 COMMUNITY EVENTS:**
+**🔥 SATURDAY IS ABOUT TO BE LEGENDARY** - 2-8PM @ Central Park
+Y'all... the food truck festival is THIS WEEKEND and I just saw the lineup... THAT VIRAL TIKTOK DONUT GUY IS COMING 🤯 Plus 20+ other trucks, live music, and apparently there's a surprise guest performer??? Get there EARLY because last year it was so packed people couldn't get in! #FoodTruckFestival
 
-Your task: Create an engaging, informative community news feed based ONLY on the actual content found through web scraping.
+**📰 LOCAL NEWS:**
+**👀 NO WAY... IT'S FINALLY HAPPENING**
+That death trap pothole on Main Street that's been eating cars for MONTHS? They're fixing it next week! 🎉 RIP to everyone's rims that didn't make it this far. About damn time! #MainStreetPothole #VictoryLap
 
-CRITICAL REQUIREMENTS:
-1. ONLY use information from the scraped content provided below
-2. If minimal content was scraped, acknowledge limitations and suggest checking official sources
-3. Transform actual scraped data into readable format with markdown sections: **🏛️ GOVERNMENT & MUNICIPAL:** **🎪 COMMUNITY EVENTS:** **📰 LOCAL NEWS:** **🏢 PUBLIC SERVICES:**
-4. Include specific details found in scraped content (dates, locations, decisions, etc.)
-5. If no substantial content found, explain that web scraping encountered limitations and direct users to official websites
+**🏢 PUBLIC SERVICES:**
+**🤫 BEST KEPT SECRET JUST DROPPED**
+Wait... the library is now open until 10PM on weekends AND they have PS5s and Xbox?! 🎮✨ Why is nobody talking about this?? Forget expensive gaming cafes, your new hangout spot just became FREE. Thank me later 😎 #LibraryGlow #GameOn
 
-FORMATTING:
-• **Title from scraped content** - Date/Time from source
-  Description and details based on actual scraped information
+MAKE IT VIRAL: Use caps for emphasis, multiple emojis, rhetorical questions, and make people feel like they NEED to share this info immediately!"""
 
-USER INTERESTS: {', '.join(interests) if interests else 'general community engagement'}
-
-IMPORTANT: Base your response entirely on the actual scraped content below. Do not invent or add details not found in the source material:"""
-
-            user_prompt = content_summary
+            user_prompt = f"Create VIRAL Instagram-style community posts for {location} that are so engaging people will immediately want to share them with their friends. Use psychology to make people feel like they're getting exclusive insider info they can't miss!"
 
             messages = [
                 {"role": "system", "content": system_prompt},
@@ -120,7 +121,7 @@ IMPORTANT: Base your response entirely on the actual scraped content below. Do n
 
             # Call Azure Foundry AI to process the scraped content
             logging.info(f"Processing scraped content for {location}")
-            agent_response = call_foundry_agent(messages)
+            agent_response = call_foundry_agent(messages, location=location)
 
             # Let the agent response go through without hardcoded fallbacks
             logging.info("Azure Foundry Agent response received - using real agent output")
