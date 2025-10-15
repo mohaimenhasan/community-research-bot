@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, MapPin, Clock, ExternalLink } from 'lucide-react';
+import { RefreshCw, MapPin, Clock } from 'lucide-react';
 
 const ContentFeed = ({ content, onRefresh, location }) => {
   if (!content) {

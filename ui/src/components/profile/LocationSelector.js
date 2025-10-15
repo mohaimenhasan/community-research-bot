@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Search, X, Navigation, Clock } from 'lucide-react';
+import { MapPin, Search, X, Navigation } from 'lucide-react';
 import locationService from '../../services/locationService';
 
 const LocationSelector = ({ onLocationSelect, onClose }) => {
@@ -7,9 +7,7 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
-  const [nearbyCities, setNearbyCities] = useState([]);
   const [popularLocations, setPopularLocations] = useState([]);
-  const [locationDetected, setLocationDetected] = useState(false);
 
   // Try to detect user location on component mount
   useEffect(() => {
@@ -22,15 +20,13 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
       const location = await locationService.getCurrentLocation();
 
       setCurrentLocation(location);
-      setLocationDetected(true);
 
-      // Get nearby cities within 100 miles
+      // Get nearby cities within 100 miles and set popular locations
       const nearby = locationService.getCitiesWithinRadius(
         location.coordinates[0],
         location.coordinates[1],
         100
       );
-      setNearbyCities(nearby);
 
       // Get popular locations for this area
       const popular = locationService.getPopularLocationsForArea(
