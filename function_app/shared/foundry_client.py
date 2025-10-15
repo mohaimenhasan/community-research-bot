@@ -3,10 +3,18 @@ Azure AI Foundry client utilities for consistent API interactions
 """
 import os
 import logging
-import requests
 import json
 from typing import Dict, Any, Optional
 from azure.identity import ManagedIdentityCredential
+
+# Handle requests import with fallback
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    import urllib.request
+    import urllib.parse
+    REQUESTS_AVAILABLE = False
 
 API_VERSION = "2024-06-01"
 
@@ -113,16 +121,33 @@ class FoundryClient:
 
         logging.info(f"Calling Foundry endpoint {url} for function {function_name}")
 
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-            response.raise_for_status()
-
+        if REQUESTS_AVAILABLE:
             try:
-                return response.json()
-            except json.JSONDecodeError:
-                logging.warning(f"Non-JSON response from {function_name}")
-                return {"raw_response": response.text}
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                response.raise_for_status()
 
-        except requests.RequestException as e:
-            logging.error(f"Foundry API call failed for {function_name}: {str(e)}")
-            raise
+                try:
+                    return response.json()
+                except json.JSONDecodeError:
+                    logging.warning(f"Non-JSON response from {function_name}")
+                    return {"raw_response": response.text}
+
+            except requests.RequestException as e:
+                logging.error(f"Foundry API call failed for {function_name}: {str(e)}")
+                raise
+        else:
+            # Fallback using urllib
+            try:
+                data = json.dumps(payload).encode('utf-8')
+                req = urllib.request.Request(url, data=data, headers=headers)
+                with urllib.request.urlopen(req, timeout=60) as response:
+                    response_text = response.read().decode('utf-8')
+                    try:
+                        return json.loads(response_text)
+                    except json.JSONDecodeError:
+                        logging.warning(f"Non-JSON response from {function_name}")
+                        return {"raw_response": response_text}
+
+            except Exception as e:
+                logging.error(f"Foundry API call failed for {function_name}: {str(e)}")
+                raise
