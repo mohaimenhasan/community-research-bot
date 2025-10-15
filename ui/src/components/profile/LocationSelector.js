@@ -21,13 +21,6 @@ const LocationSelector = ({ onLocationSelect, onClose }) => {
 
       setCurrentLocation(location);
 
-      // Get nearby cities within 100 miles and set popular locations
-      const nearby = locationService.getCitiesWithinRadius(
-        location.coordinates[0],
-        location.coordinates[1],
-        100
-      );
-
       // Get popular locations for this area
       const popular = locationService.getPopularLocationsForArea(
         location.coordinates[0],
