@@ -1,7 +1,7 @@
 import React from 'react';
 import { RefreshCw, MapPin, Clock } from 'lucide-react';
 
-const ContentFeed = ({ content, onRefresh, location }) => {
+const ContentFeed = ({ content, onRefresh, location, onPostClick }) => {
   if (!content) {
     return (
       <div className="text-center py-8">
@@ -136,7 +136,15 @@ const ContentFeed = ({ content, onRefresh, location }) => {
             <div className="p-4">
               <div className="space-y-4">
                 {section.items.slice(0, 3).map((item, itemIndex) => (
-                  <div key={itemIndex} className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border-l-4 border-blue-500">
+                  <div
+                    key={itemIndex}
+                    className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => onPostClick && onPostClick({
+                      content: `**${section.title}:**\n${item}`,
+                      category: section.title,
+                      timestamp: `${Math.floor(Math.random() * 60) + 5}m ago`
+                    })}
+                  >
                     <div className="flex-1">
                       <p className="text-sm text-gray-800 leading-relaxed font-medium">
                         {item}

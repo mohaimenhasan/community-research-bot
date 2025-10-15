@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '../context/UserContext';
 import { apiService } from '../services/apiService';
 import ContentFeed from '../components/content/ContentFeed';
+import BlogDetail from '../components/content/BlogDetail';
 import LocationSelector from '../components/profile/LocationSelector';
 import { MapPin, Calendar, Users, TrendingUp } from 'lucide-react';
 
@@ -10,6 +11,8 @@ const Home = () => {
   const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [showBlog, setShowBlog] = useState(false);
 
   const hasLocation = userPreferences?.primaryLocation;
 
@@ -46,6 +49,16 @@ const Home = () => {
     } catch (error) {
       console.error('Failed to update location:', error);
     }
+  };
+
+  const handlePostClick = (post) => {
+    setSelectedPost(post);
+    setShowBlog(true);
+  };
+
+  const handleBackToFeed = () => {
+    setShowBlog(false);
+    setSelectedPost(null);
   };
 
   // Location setup screen
@@ -146,19 +159,28 @@ const Home = () => {
                 <p className="text-2xl font-bold text-gray-900">
                   {content.agent_response?.location_specific ? '85%' : '60%'}
                 </p>
-                <p className="text-sm text-gray-500">Match Score</p>
+                <p className="text-sm text-gray-500" title="How well this content matches your interests and location preferences">Match Score</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Content Feed */}
-      <ContentFeed
-        content={content}
-        onRefresh={loadPersonalizedContent}
-        location={userPreferences.primaryLocation}
-      />
+      {/* Content Feed or Blog Detail */}
+      {showBlog ? (
+        <BlogDetail
+          post={selectedPost}
+          onBack={handleBackToFeed}
+          location={`${userPreferences.primaryLocation.city}, ${userPreferences.primaryLocation.province}`}
+        />
+      ) : (
+        <ContentFeed
+          content={content}
+          onRefresh={loadPersonalizedContent}
+          location={userPreferences.primaryLocation}
+          onPostClick={handlePostClick}
+        />
+      )}
 
       {/* Location Selector Modal */}
       {showLocationSelector && (
