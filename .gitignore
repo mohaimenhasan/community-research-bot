@@ -1,1 +1,4 @@
 infra/main.json
+.env
+ui/node_modules
+ui/build
