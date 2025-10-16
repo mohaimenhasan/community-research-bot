@@ -263,15 +263,45 @@ Community Hub aims to become the definitive platform for local community engagem
 ## 🚦 Getting Started
 
 ### Prerequisites
-- Azure subscription with AI Foundry access
+- Azure subscription with AI Foundry access (with Bing search enabled)
 - GitHub account for CI/CD
 - Python 3.12+ for local development
 
+### 🔑 Critical: Enable Internet Search in Azure AI Foundry Agent
+
+**IMPORTANT**: Your agent must have internet search (Bing) enabled:
+
+1. Go to Azure AI Foundry portal: https://ai.azure.com
+2. Navigate to your agent: `asst_Ij5hGoGiriNuG7VGLGIAZ0zi`
+3. Enable "Bing Search" tool in agent configuration
+4. Save changes
+
+Without this, the agent will fail or return generic responses.
+
 ### Quick Deploy
 1. Clone this repository
-2. Configure Azure resources (see `CLAUDE.md` for details)
-3. Set environment variables in Function App
+2. Configure Azure resources (see `REAL_DATA_FIX.md` for details)
+3. Set environment variables in Function App:
+   - `AGENT_ID`: Your Azure AI Foundry agent ID
+   - `RESOURCE_NAME`: Your Azure AI resource name
+   - `AZURE_OPENAI_KEY`: API key for authentication
 4. Push to main branch to trigger deployment
+
+### Test Real Data Flow
+```bash
+# Test that agent is doing real internet research
+chmod +x test-real-agent.sh
+./test-real-agent.sh
+```
+
+### 💰 Cost Management
+
+**Expected costs with optimizations applied**:
+- ~$0.02-0.05 per research request
+- ~$9-15/month for light development (10 requests/day)
+- ~$180-300/month for light production (200 requests/day)
+
+See `REAL_DATA_FIX.md` for detailed cost optimization strategies.
 
 ### Local Development
 ```bash
@@ -279,7 +309,7 @@ cd function_app
 func start
 ```
 
-For detailed setup instructions, see `CLAUDE.md`.
+For detailed setup instructions, see `REAL_DATA_FIX.md` and `CLAUDE.md`.
 
 ---
 

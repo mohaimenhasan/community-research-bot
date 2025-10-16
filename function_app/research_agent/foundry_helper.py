@@ -1,53 +1,43 @@
 """
 Azure Foundry client helper for research agent function
+Uses Agent-to-Agent (A2A) communication with internet search
 """
 import os
 import logging
 import sys
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # Add the function_app directory to the path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def call_foundry_agent(messages: list, tools: Optional[list] = None, location: str = "your area") -> Dict[str, Any]:
-    """Call Azure Foundry AI using the centralized client"""
+def call_foundry_agent(location: str, user_interests: Optional[List[str]] = None, past_events: Optional[List[str]] = None) -> Dict[str, Any]:
+    """
+    Call Azure AI Foundry Agent with internet search enabled
+    This uses A2A communication to let the agent do REAL web research
+    """
     try:
         from shared.foundry_client import FoundryClient
 
-        logging.info("Initializing Azure Foundry client for research agent")
+        logging.info(f"Calling Azure AI Foundry Agent for REAL internet research about {location}")
 
         # Create foundry client
         foundry_client = FoundryClient()
 
-        # Use the actual agent endpoint for real research capabilities
-        agent_id = os.environ.get('AGENT_ID')
+        # Build concise user query for the agent (cost optimization)
+        user_query = f"Find current events, meetings, and news in {location}."
+        
+        if user_interests:
+            user_query += f" Focus on: {', '.join(user_interests[:3])}."  # Limit to 3 interests
+        
+        user_query += " Provide 3-5 items per category with dates/times/locations and sources."
 
-        if agent_id:
-            logging.info(f"Calling Azure Foundry Agent {agent_id} for real-time research")
-            result = foundry_client.call_agent(messages, tools=None)
-        else:
-            logging.warning("No AGENT_ID found, falling back to chat completions")
-            result = foundry_client.call_chat_completions(
-                messages,
-                max_tokens=800
-            )
+        # Call the agent with internet search enabled (with cost limits)
+        result = foundry_client.call_agent_with_search(user_query, max_tokens=800)
 
-        logging.info("Azure Foundry response received successfully")
-
-        # Handle case where GPT-5-mini returns empty content but has reasoning tokens
-        if "choices" in result and result["choices"]:
-            choice = result["choices"][0]
-            if "message" in choice and choice["message"].get("content") == "":
-                # If content is empty but reasoning tokens were used, log and return error to retry
-                if "usage" in result and result["usage"].get("completion_tokens_details", {}).get("reasoning_tokens", 0) > 0:
-                    logging.warning("GPT-5-mini reasoning token bug: model spending all tokens on reasoning instead of output")
-                    raise Exception("GPT-5-mini reasoning token issue - model not configured for visible output")
-                else:
-                    logging.warning("GPT-5-mini returned completely empty response")
-                    raise Exception("Model returned empty response - service may be experiencing issues")
-
+        logging.info("Azure Foundry Agent completed internet research successfully")
+        
         return result
 
     except Exception as e:
-        logging.error(f"Azure Foundry call failed: {str(e)}")
+        logging.error(f"Azure Foundry Agent research failed: {str(e)}")
         raise

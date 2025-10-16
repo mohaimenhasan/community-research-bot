@@ -61,6 +61,56 @@ class FoundryClient:
 
         return headers
 
+    def call_agent_with_search(self, user_query: str, max_tokens: int = 1000) -> Dict[str, Any]:
+        """
+        Call Azure AI Foundry Agent with internet search enabled (A2A)
+        This is the proper way to use agents with web search capabilities
+        
+        Cost optimization:
+        - Default max_tokens=1000 (reduced from 2000 to save money)
+        - Clear, concise instructions to minimize reasoning tokens
+        - Structured output format to reduce token waste
+        """
+        if not self.agent_id:
+            raise ValueError("AGENT_ID is required for agent-based internet search")
+        
+        # Azure AI Foundry Assistants API with internet search
+        url = f"{self.base_url}/openai/threads/runs?api-version={API_VERSION}"
+        
+        # Cost-optimized payload with clear, direct instructions
+        payload = {
+            "assistant_id": self.agent_id,
+            "thread": {
+                "messages": [{
+                    "role": "user",
+                    "content": user_query
+                }]
+            },
+            # Concise instructions to minimize token usage
+            "instructions": """You are a community research assistant. Search the internet for REAL current information.
+
+Find 3-5 items per category:
+1. Town hall meetings & city council (dates, times, agenda items)
+2. Community events (festivals, markets with specific dates)
+3. Local news (recent stories from official sources)
+4. Public services (library, recreation programs)
+
+Format each as: **Title** - Brief description (date/time/location). Source: URL
+
+Be concise. Use only verified information you find online.""",
+            "tools": [
+                {
+                    "type": "bing_search"  # Enable Bing search for the agent
+                }
+            ],
+            "max_completion_tokens": max_tokens,  # Cost control
+            "stream": False,
+            "temperature": 0.3  # Lower temperature for more focused, cheaper responses
+        }
+        
+        logging.info(f"Calling Azure AI Foundry Agent with internet search (max_tokens={max_tokens})")
+        return self._make_request(url, payload, "agent_internet_search")
+
     def call_agent(self, messages: list, tools: Optional[list] = None) -> Dict[str, Any]:
         """Call Azure AI Foundry Agent using A2A communication with Azure OpenAI Assistants API"""
         if self.agent_id:
