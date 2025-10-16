@@ -40,43 +40,73 @@ const ContentFeed = ({ content, onRefresh, location, onPostClick }) => {
       }];
     }
 
-    // Split by section headers: **🏛️ GOVERNMENT & MUNICIPAL:** etc.
-    const sectionPattern = /\*\*([🏛️🎪📰🏢].*?):\*\*/g;
+    // Updated parsing for new AI format: 🏛️ GOVERNMENT & MUNICIPAL (without ** formatting)
+    // Split by emoji section headers directly
+    const sectionPattern = /^([🏛️🎪📰🏢][^\n]+)/gm;
     const sections = [];
-    let lastIndex = 0;
-    let match;
+    const matches = [...text.matchAll(sectionPattern)];
 
-    while ((match = sectionPattern.exec(text)) !== null) {
-      if (sections.length > 0) {
-        // Add content from previous section
-        const prevContent = text.substring(lastIndex, match.index).trim();
-        if (prevContent) {
-          sections[sections.length - 1].content = prevContent;
+    if (matches.length > 0) {
+      for (let i = 0; i < matches.length; i++) {
+        const currentMatch = matches[i];
+        const nextMatch = matches[i + 1];
+
+        const title = currentMatch[1].trim();
+        const startIndex = currentMatch.index + currentMatch[0].length;
+        const endIndex = nextMatch ? nextMatch.index : text.length;
+        const content = text.substring(startIndex, endIndex).trim();
+
+        sections.push({
+          title: title,
+          content: content
+        });
+      }
+    } else {
+      // Fallback: try old format **🏛️ GOVERNMENT & MUNICIPAL:** etc.
+      const oldSectionPattern = /\*\*([🏛️🎪📰🏢].*?):\*\*/g;
+      let lastIndex = 0;
+      let match;
+
+      while ((match = oldSectionPattern.exec(text)) !== null) {
+        if (sections.length > 0) {
+          // Add content from previous section
+          const prevContent = text.substring(lastIndex, match.index).trim();
+          if (prevContent) {
+            sections[sections.length - 1].content = prevContent;
+          }
         }
+
+        sections.push({
+          title: match[1].trim(),
+          content: ''
+        });
+        lastIndex = oldSectionPattern.lastIndex;
       }
 
-      sections.push({
-        title: match[1].trim(),
-        content: ''
-      });
-      lastIndex = sectionPattern.lastIndex;
-    }
-
-    // Add content for the last section
-    if (sections.length > 0) {
-      const lastContent = text.substring(lastIndex).trim();
-      if (lastContent) {
-        sections[sections.length - 1].content = lastContent;
+      // Add content for the last section
+      if (sections.length > 0) {
+        const lastContent = text.substring(lastIndex).trim();
+        if (lastContent) {
+          sections[sections.length - 1].content = lastContent;
+        }
       }
     }
 
     // Convert content to items for display
     return sections.map(section => {
-      // Split content into paragraphs/posts
-      const posts = section.content
-        .split(/\n\s*\n/) // Split by double newlines
-        .filter(post => post.trim().length > 0)
-        .map(post => post.trim());
+      // For new AI format, each section is one continuous post
+      // Split only if there are clear paragraph breaks
+      let posts;
+      if (section.content.includes('\n\n')) {
+        // Split by double newlines for clear paragraphs
+        posts = section.content
+          .split(/\n\s*\n/)
+          .filter(post => post.trim().length > 0)
+          .map(post => post.trim());
+      } else {
+        // Keep as single item for viral social media style content
+        posts = section.content.trim() ? [section.content.trim()] : [];
+      }
 
       return {
         title: section.title,
