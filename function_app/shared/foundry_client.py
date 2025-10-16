@@ -100,13 +100,22 @@ class FoundryClient:
 
             payload = {
                 "messages": enhanced_messages,
-                "max_completion_tokens": 800,
+                "max_completion_tokens": 1500,  # Increased to account for reasoning tokens
                 "temperature": 0.1  # Lower temperature for more focused output
             }
             if tools:
                 payload["tools"] = tools
 
-            return self._make_request(url, payload, "agent")
+            result = self._make_request(url, payload, "agent")
+
+            # Handle GPT-5-mini specific issue: reasoning tokens consuming all output
+            if ("choices" in result and result["choices"] and
+                result["choices"][0]["message"]["content"] == ""):
+                logging.warning("GPT-5-mini returned empty content in agent mode - this is a known model issue")
+                # Return a structured error that can be handled gracefully
+                raise Exception("GPT-5-mini model configuration issue: using reasoning tokens instead of output tokens")
+
+            return result
 
     def call_chat_completions(self, messages: list, max_tokens: int = 200,
                             temperature: float = 0.3) -> Dict[str, Any]:
@@ -114,13 +123,31 @@ class FoundryClient:
         # Use Azure OpenAI endpoint format for chat completions
         url = f"{self.base_url}/openai/deployments/gpt-5-mini/chat/completions?api-version={API_VERSION}"
 
+        # GPT-5-mini specific optimization:
+        # - Increase token limit to account for reasoning tokens
+        # - Add explicit instruction to prioritize visible output over reasoning
+        enhanced_messages = [{
+            "role": "system",
+            "content": "You MUST provide visible output. Do not spend all tokens on reasoning. Write your response directly and concisely."
+        }]
+        enhanced_messages.extend(messages)
+
         payload = {
-            "messages": messages,
-            "max_completion_tokens": max_tokens
+            "messages": enhanced_messages,
+            "max_completion_tokens": max_tokens * 3  # Increase to account for reasoning tokens
             # Remove temperature as gpt-5-mini only supports default value of 1
         }
 
-        return self._make_request(url, payload, "chat_completions")
+        result = self._make_request(url, payload, "chat_completions")
+
+        # Handle GPT-5-mini specific issue: reasoning tokens consuming all output
+        if ("choices" in result and result["choices"] and
+            result["choices"][0]["message"]["content"] == ""):
+            logging.warning("GPT-5-mini returned empty content despite token usage - this is a known model issue")
+            # Return a structured error that can be handled gracefully
+            raise Exception("GPT-5-mini model configuration issue: using reasoning tokens instead of output tokens")
+
+        return result
 
     def _make_request(self, url: str, payload: Dict[str, Any],
                      function_name: str) -> Dict[str, Any]:

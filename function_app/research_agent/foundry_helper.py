@@ -40,8 +40,11 @@ def call_foundry_agent(messages: list, tools: Optional[list] = None, location: s
             if "message" in choice and choice["message"].get("content") == "":
                 # If content is empty but reasoning tokens were used, log and return error to retry
                 if "usage" in result and result["usage"].get("completion_tokens_details", {}).get("reasoning_tokens", 0) > 0:
-                    logging.warning("GPT-5-mini returned empty content despite reasoning tokens - model may need different prompt")
-                    raise Exception("Model returned empty response despite processing - requires retry")
+                    logging.warning("GPT-5-mini reasoning token bug: model spending all tokens on reasoning instead of output")
+                    raise Exception("GPT-5-mini reasoning token issue - model not configured for visible output")
+                else:
+                    logging.warning("GPT-5-mini returned completely empty response")
+                    raise Exception("Model returned empty response - service may be experiencing issues")
 
         return result
 
